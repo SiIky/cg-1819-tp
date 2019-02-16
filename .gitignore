@@ -32,3 +32,8 @@
 *.app
 *.3d
 generator/generate
+CMakeFiles
+figures/sphere/Makefile
+figures/sphere/class2
+figures/sphere/cmake_install.cmake
+figures/sphere/CMakeCache.txt
