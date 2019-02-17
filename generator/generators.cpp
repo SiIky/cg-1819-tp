@@ -1,5 +1,8 @@
 #include "generators.h"
 
+#include <math.h>
+#include <vector>
+
 /*
  * INTERNAL FUNCTIONS
  */
@@ -42,6 +45,42 @@ static void gen_box_write_intern (FILE * outf, struct Box box)
     gen_rectangle_write_intern(outf, box.top);
 }
 
+static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
+{
+    std::vector<struct Point> verts;
+    verts.reserve((sph.slices + 1) * (sph.stacks + 1));
+
+    for (unsigned i = 0; i <= sph.stacks; i++) {
+        double lat = ((double) i) / ((double) sph.stacks) * M_PI;
+
+        for (unsigned j = 0; j <= sph.slices; j++) {
+            double lon = ((double) j) / ((double) sph.slices) * 2 * M_PI;
+
+            double clat = cos(lat);
+            double clon = cos(lon);
+            double slat = sin(lat);
+            double slon = sin(lon);
+
+            float x = (float) (sph.rad * clon * slat);
+            float y = (float) (sph.rad * clat);
+            float z = (float) (sph.rad * slon * slat);
+
+            verts.push_back(Point(x, y, z));
+        }
+    }
+
+    unsigned len = sph.slices * sph.stacks + sph.slices;
+    for (unsigned i = 0; i < len; i++) {
+        struct Point P1 = verts[i];
+        struct Point P2 = verts[i + sph.slices + 1];
+        struct Point P3 = verts[i + sph.slices];
+        struct Point P4 = verts[i + 1];
+
+        gen_triangle_write_intern(outf, Triangle(P1, P2, P3));
+        gen_triangle_write_intern(outf, Triangle(P2, P1, P4));
+    }
+}
+
 /*
  * WRITE
  */
@@ -55,6 +94,7 @@ static void gen_box_write_intern (FILE * outf, struct Box box)
 gen_write(Triangle,  triangle,  "triangle\n");
 gen_write(Rectangle, rectangle, "rectangle\n");
 gen_write(Box,       box,       "box\n");
+gen_write(Sphere,    sphere,    "sphere\n");
 
 /*
  * UTILITY
@@ -105,36 +145,45 @@ struct Point gen_point_read_intern (FILE * inf)
 
 struct Point Point (float x, float y, float z)
 {
-	struct Point ret;
-	ret.x = x;
-	ret.y = y;
-	ret.z = z;
-	return ret;
+    struct Point ret;
+    ret.x = x;
+    ret.y = y;
+    ret.z = z;
+    return ret;
 }
 
 struct Triangle Triangle (struct Point P1, struct Point P2, struct Point P3)
 {
-	struct Triangle ret;
-	ret.P1 = P1;
-	ret.P2 = P2;
-	ret.P3 = P3;
-	return ret;
+    struct Triangle ret;
+    ret.P1 = P1;
+    ret.P2 = P2;
+    ret.P3 = P3;
+    return ret;
 }
 
 struct Rectangle Rectangle (struct Point P1, struct Point P2, struct Point P3, struct Point P4)
 {
-	struct Rectangle ret;
-	ret.P1 = P1;
-	ret.P2 = P2;
-	ret.P3 = P3;
-	ret.P4 = P4;
-	return ret;
+    struct Rectangle ret;
+    ret.P1 = P1;
+    ret.P2 = P2;
+    ret.P3 = P3;
+    ret.P4 = P4;
+    return ret;
 }
 
 struct Box Box (struct Rectangle top, struct Rectangle bottom)
 {
-	struct Box ret;
-	ret.top = top;
-	ret.bottom = bottom;
-	return ret;
+    struct Box ret;
+    ret.top = top;
+    ret.bottom = bottom;
+    return ret;
+}
+
+struct Sphere Sphere (float rad, unsigned slices, unsigned stacks)
+{
+    struct Sphere ret;
+    ret.rad = rad;
+    ret.slices = slices;
+    ret.stacks = stacks;
+    return ret;
 }
