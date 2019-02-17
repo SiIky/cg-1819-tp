@@ -19,13 +19,61 @@ static void gen_triangle_write_intern (FILE * outf, struct Triangle tri)
     gen_point_write_intern(outf, tri.P3);
 }
 
-static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect)
+/**
+ * P1 ---- P13 ---- P3
+ * |        |        |
+ * |   R1   |   R3   |
+ * |        |        |
+ * P12 ---- PM ---- P34
+ * |        |        |
+ * |   R2   |   R4   |
+ * |        |        |
+ * P2 ---- P24 ---- P4
+ */
+static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsigned ndivs)
 {
-    gen_triangle_write_intern(outf, Triangle(rect.P1, rect.P2, rect.P3));
-    gen_triangle_write_intern(outf, Triangle(rect.P3, rect.P2, rect.P4));
+    if (ndivs == 0) {
+        gen_triangle_write_intern(outf, Triangle(rect.P1, rect.P2, rect.P3));
+        gen_triangle_write_intern(outf, Triangle(rect.P3, rect.P2, rect.P4));
+    } else {
+        struct Point P1 = rect.P1;
+        struct Point P2 = rect.P2;
+        struct Point P3 = rect.P3;
+        struct Point P4 = rect.P4;
+
+#define MIDPOINT(A, B) Point((A.x + B.x) / 2, (A.y + B.y) / 2, (A.z + B.z) / 2)
+        struct Point P13 = MIDPOINT(P1, P3);
+        struct Point P12 = MIDPOINT(P1, P2);
+        struct Point P24 = MIDPOINT(P2, P4);
+        struct Point P34 = MIDPOINT(P3, P4);
+
+        struct Point PM;
+        {
+            struct Point PM1 = MIDPOINT(P12, P34);
+            struct Point PM2 = MIDPOINT(P13, P24);
+            struct Point PM12 = MIDPOINT(PM1, PM2);
+
+            struct Point P14 = MIDPOINT(P1, P4);
+            struct Point P23 = MIDPOINT(P2, P3);
+            struct Point P1423 = MIDPOINT(P14, P23);
+
+            PM = MIDPOINT(PM12, P1423);
+        }
+#undef MIDPOINT
+
+        struct Rectangle R1 = Rectangle(P1,  P12, P13, PM);
+        struct Rectangle R2 = Rectangle(P12, P2,  PM,  P24);
+        struct Rectangle R3 = Rectangle(P13, P3,  PM,  P34);
+        struct Rectangle R4 = Rectangle(PM,  P24, P34, P4);
+
+        gen_rectangle_write_intern(outf, R1, ndivs - 1);
+        gen_rectangle_write_intern(outf, R2, ndivs - 1);
+        gen_rectangle_write_intern(outf, R3, ndivs - 1);
+        gen_rectangle_write_intern(outf, R4, ndivs - 1);
+    }
 }
 
-static void gen_box_write_intern (FILE * outf, struct Box box)
+static void gen_box_write_intern (FILE * outf, struct Box box, unsigned ndivs)
 {
 #define p1 box.top.P1
 #define p2 box.top.P2
@@ -36,13 +84,13 @@ static void gen_box_write_intern (FILE * outf, struct Box box)
 #define p7 box.bottom.P3
 #define p8 box.bottom.P4
 
-    gen_rectangle_write_intern(outf, Rectangle(p1, p5, p2, p6)); /* Back Left */
-    gen_rectangle_write_intern(outf, Rectangle(p1, p5, p3, p7)); /* Back Right */
-    gen_rectangle_write_intern(outf, box.bottom);
+    gen_rectangle_write_intern(outf, Rectangle(p1, p5, p2, p6), ndivs); /* Back Left */
+    gen_rectangle_write_intern(outf, Rectangle(p1, p5, p3, p7), ndivs); /* Back Right */
+    gen_rectangle_write_intern(outf, box.bottom, ndivs);
 
-    gen_rectangle_write_intern(outf, Rectangle(p2, p6, p4, p8)); /* Front Left */
-    gen_rectangle_write_intern(outf, Rectangle(p4, p8, p3, p7)); /* Front Right */
-    gen_rectangle_write_intern(outf, box.top);
+    gen_rectangle_write_intern(outf, Rectangle(p2, p6, p4, p8), ndivs); /* Front Left */
+    gen_rectangle_write_intern(outf, Rectangle(p4, p8, p3, p7), ndivs); /* Front Right */
+    gen_rectangle_write_intern(outf, box.top, ndivs);
 }
 
 static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
@@ -91,10 +139,16 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
         gen_ ## fig ## _write_intern(outf, fig);               \
     } void gen_ ## fig ## _write (FILE * outf, struct Fig fig)
 
-gen_write(Triangle,  triangle,  "triangle\n");
-gen_write(Rectangle, rectangle, "rectangle\n");
-gen_write(Box,       box,       "box\n");
-gen_write(Sphere,    sphere,    "sphere\n");
+#define gen_write_divs(Fig, fig, id) \
+    void gen_ ## fig ## _write (FILE * outf, struct Fig fig, unsigned ndivs) { \
+        fprintf(outf, id);                                                     \
+        gen_ ## fig ## _write_intern(outf, fig, ndivs);                        \
+    } void gen_ ## fig ## _write (FILE * outf, struct Fig fig, unsigned ndivs)
+
+gen_write(     Triangle,  triangle,  "triangle\n");
+gen_write_divs(Rectangle, rectangle, "rectangle\n");
+gen_write_divs(Box,       box,       "box\n");
+gen_write(     Sphere,    sphere,    "sphere\n");
 
 /*
  * UTILITY
@@ -136,7 +190,7 @@ struct Box gen_box_from_whd (float width, float height, float depth)
             );
 }
 
-struct Point gen_point_read_intern (FILE * inf)
+struct Point gen_point_read (FILE * inf)
 {
     struct Point ret = Point(0, 0, 0);
     fscanf(inf, "%f %f %f\n", &ret.x, &ret.y, &ret.z);

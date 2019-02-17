@@ -51,7 +51,7 @@ void gen_triangle_write (FILE * outf, struct Triangle tri);
  * | /   |
  * P2---P4
  */
-void gen_rectangle_write (FILE * outf, struct Rectangle rect);
+void gen_rectangle_write (FILE * outf, struct Rectangle rect, unsigned ndivs);
 
 /**
  *    P1------P3  <-- Top rectangle
@@ -63,7 +63,7 @@ void gen_rectangle_write (FILE * outf, struct Rectangle rect);
  * | /     | /
  * P6------P8
  */
-void gen_box_write (FILE * outf, struct Box box);
+void gen_box_write (FILE * outf, struct Box box, unsigned ndivs);
 
 void gen_sphere_write (FILE * outf, struct Sphere sph);
 
@@ -98,6 +98,8 @@ struct Rectangle gen_rectangle_from_wd (float width, float depth);
  *     w
  */
 struct Box gen_box_from_whd (float width, float height, float depth);
+
+struct Point gen_point_read (FILE * inf);
 
 struct Point Point (float x, float y, float z);
 struct Triangle Triangle (struct Point P1, struct Point P2, struct Point P3);
