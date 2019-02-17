@@ -1,13 +1,13 @@
-CC := cc
+CXX := g++
 EXEC := generate
 SRC := \
-    main.c       \
-    generators.c \
+    main.cpp       \
+    generators.cpp \
 
-OBJS := $(SRC:.c=.o)
+OBJS := $(SRC:.cpp=.o)
 
 OPT := -Og -g
-CFLAGS := \
+CXXFLAGS := \
     $(OPT)       \
     -Wall        \
     -Wconversion \
@@ -15,12 +15,11 @@ CFLAGS := \
     -flto        \
     -pedantic    \
     -static      \
-    -std=c18     \
 
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(EXEC)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(EXEC)
 
 clean:
 	$(RM) $(OBJS) $(EXEC)

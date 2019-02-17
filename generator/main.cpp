@@ -4,17 +4,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-int usage_square (int argc, const char ** argv)
+int usage_rectangle (int argc, const char ** argv)
 {
     (void) argc;
-    printf("\t%s square OUTFILE WIDTH DEPTH\n", *argv);
+    printf("\t%s rectangle OUTFILE WIDTH DEPTH\n", *argv);
     return !0;
 }
 
-int usage_cube (int argc, const char ** argv)
+int usage_box (int argc, const char ** argv)
 {
     (void) argc;
-    printf("\t%s cube OUTFILE WIDTH HEIGHT DEPTH\n", *argv);
+    printf("\t%s box OUTFILE WIDTH HEIGHT DEPTH\n", *argv);
     return !0;
 }
 
@@ -25,15 +25,15 @@ int usage (int argc, const char ** argv)
             "\t%s FIGURE OUTFILE <ARGS>\n"
             "\n",
             *argv);
-    usage_square(argc, argv);
-    usage_cube(argc, argv);
+    usage_rectangle(argc, argv);
+    usage_box(argc, argv);
     return !0;
 }
 
-int main_square (int argc, const char ** argv)
+int main_rectangle (int argc, const char ** argv)
 {
     if (argc < 5)
-        return usage_square(argc, argv);
+        return usage_rectangle(argc, argv);
 
     FILE * outf = fopen(argv[2], "w");
 
@@ -43,15 +43,15 @@ int main_square (int argc, const char ** argv)
     sscanf(argv[3], "%f", &w);
     sscanf(argv[4], "%f", &d);
 
-    gen_square_write(outf, gen_square_from_wd(w, d));
+    gen_rectangle_write(outf, gen_rectangle_from_wd(w, d));
 
     return 0;
 }
 
-int main_cube (int argc, const char ** argv)
+int main_box (int argc, const char ** argv)
 {
     if (argc < 6)
-        return usage_cube(argc, argv);
+        return usage_box(argc, argv);
 
     FILE * outf = fopen(argv[2], "w");
 
@@ -63,7 +63,7 @@ int main_cube (int argc, const char ** argv)
     sscanf(argv[4], "%f", &h);
     sscanf(argv[5], "%f", &d);
 
-    gen_cube_write(outf, gen_cube_from_whd(w, h, d));
+    gen_box_write(outf, gen_box_from_whd(w, h, d));
 
     return 0;
 }
@@ -78,7 +78,7 @@ int main (int argc, const char ** argv)
     (strcmp(argv[1], fig) == 0) ? func(argc, argv)
 
     return
-        cmd("cube", main_cube):
-            cmd("square", main_square):
+        cmd("box", main_box):
+            cmd("rectangle", main_rectangle):
                 usage(argc, argv);
 }

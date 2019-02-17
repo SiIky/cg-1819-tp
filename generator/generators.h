@@ -16,16 +16,16 @@ struct Triangle {
     struct Point P3;
 };
 
-struct Square {
+struct Rectangle {
     struct Point P1;
     struct Point P2;
     struct Point P3;
     struct Point P4;
 };
 
-struct Cube {
-    struct Square top;
-    struct Square bottom;
+struct Box {
+    struct Rectangle top;
+    struct Rectangle bottom;
 };
 
 /**
@@ -45,19 +45,19 @@ void gen_triangle_write (FILE * outf, struct Triangle tri);
  * | /   |
  * P2---P4
  */
-void gen_square_write (FILE * outf, struct Square sq);
+void gen_rectangle_write (FILE * outf, struct Rectangle rect);
 
 /**
- *    P1------P3  <-- Top square
+ *    P1------P3  <-- Top rectangle
  *   /|      /|
  *  / |     / |
  * P2-|----P4 |
  * |  |    |  |
- * |  P5---|--P7  <-- Bottom square
+ * |  P5---|--P7  <-- Bottom rectangle
  * | /     | /
  * P6------P8
  */
-void gen_cube_write (FILE * outf, struct Cube cb);
+void gen_box_write (FILE * outf, struct Box box);
 
 /**
  *         |y
@@ -76,24 +76,24 @@ void gen_cube_write (FILE * outf, struct Cube cb);
  * w = d(P1, P3) = d(P2, P4)
  * d = d(P1, P2) = d(P3, P4)
  */
-struct Square gen_square_from_wd (float width, float depth);
+struct Rectangle gen_rectangle_from_wd (float width, float depth);
 
 /**
- *    P1------P3  <-- Top square
+ *    P1------P3  <-- Top rectangle
  *   /|      /|
  *  / |     / | h
  * P2-|----P4 |
  * |  |    |  |
- * |  P5---|--P7  <-- Bottom square
+ * |  P5---|--P7  <-- Bottom rectangle
  * | /     | / d
  * P6------P8
  *     w
  */
-struct Cube gen_cube_from_whd (float width, float height, float depth);
+struct Box gen_box_from_whd (float width, float height, float depth);
 
-#define Point(X, Y, Z)           ((struct Point)    { .x = (X), .y = (Y), .z = (Z), })
-#define Triangle(p1, p2, p3)     ((struct Triangle) { .P1 = (p1), .P2 = (p2), .P3 = (p3), })
-#define Square(  p1, p2, p3, p4) ((struct Square)   { .P1 = (p1), .P2 = (p2), .P3 = (p3), .P4 = (p4), })
-#define Cube(TOP, BOTTOM)        ((struct Cube)     { .top = (TOP), .bottom = (BOTTOM), })
+struct Point Point (float x, float y, float z);
+struct Triangle Triangle (struct Point P1, struct Point P2, struct Point P3);
+struct Rectangle Rectangle (struct Point P1, struct Point P2, struct Point P3, struct Point P4);
+struct Box Box (struct Rectangle top, struct Rectangle bottom);
 
 #endif /* _GENERATORS_H */
