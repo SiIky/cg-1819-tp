@@ -1,7 +1,6 @@
 #include "generators.h"
 
 #include <math.h>
-#include <vector>
 
 /*
  * INTERNAL FUNCTIONS
@@ -208,6 +207,22 @@ gen_write(     Cylinder,  cylinder,  "cylinder\n");
 gen_write(     Sphere,    sphere,    "sphere\n");
 
 /*
+ * READ
+ */
+
+void gen_model_read (FILE * inf, std::vector<struct Point> * vec)
+{
+    char line[1024] = "";
+    fgets(line, 1024, inf); /* Ignore first line */
+
+    struct Point pt = Point(0, 0, 0);
+    while (gen_point_read(inf, &pt) != EOF) {
+        vec->push_back(pt);
+        pt = Point(0, 0, 0);
+    }
+}
+
+/*
  * UTILITY
  */
 
@@ -247,11 +262,9 @@ struct Box gen_box_from_whd (float width, float height, float depth)
             );
 }
 
-struct Point gen_point_read (FILE * inf)
+int gen_point_read (FILE * inf, struct Point * pt)
 {
-    struct Point ret = Point(0, 0, 0);
-    fscanf(inf, "%f %f %f\n", &ret.x, &ret.y, &ret.z);
-    return ret;
+    return fscanf(inf, "%f %f %f\n", &pt->x, &pt->y, &pt->z);
 }
 
 struct Point Point (float x, float y, float z)

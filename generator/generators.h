@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <vector>
+
 struct Point {
     float x;
     float y;
@@ -113,7 +115,8 @@ struct Rectangle gen_rectangle_from_wd (float width, float depth);
  */
 struct Box gen_box_from_whd (float width, float height, float depth);
 
-struct Point gen_point_read (FILE * inf);
+int gen_point_read (FILE * inf, struct Point * pt);
+void gen_model_read (FILE * inf, std::vector<struct Point> * vec);
 
 struct Point Point (float x, float y, float z);
 struct Triangle Triangle (struct Point P1, struct Point P2, struct Point P3);
