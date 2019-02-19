@@ -28,6 +28,18 @@ struct Box {
     struct Rectangle bottom;
 };
 
+struct Cone {
+    float rad;
+    float height;
+    unsigned ndivs;
+};
+
+struct Cylinder {
+    float rad;
+    float height;
+    unsigned ndivs;
+};
+
 struct Sphere {
     float rad;
     unsigned slices;
@@ -65,6 +77,8 @@ void gen_rectangle_write (FILE * outf, struct Rectangle rect, unsigned ndivs);
  */
 void gen_box_write (FILE * outf, struct Box box, unsigned ndivs);
 
+void gen_cone_write (FILE * outf, struct Cone c);
+void gen_cylinder_write (FILE * outf, struct Cylinder c);
 void gen_sphere_write (FILE * outf, struct Sphere sph);
 
 /**
@@ -105,6 +119,8 @@ struct Point Point (float x, float y, float z);
 struct Triangle Triangle (struct Point P1, struct Point P2, struct Point P3);
 struct Rectangle Rectangle (struct Point P1, struct Point P2, struct Point P3, struct Point P4);
 struct Box Box (struct Rectangle top, struct Rectangle bottom);
+struct Cone Cone (float rad, float height, unsigned ndivs);
+struct Cylinder Cylinder (float rad, float height, unsigned ndivs);
 struct Sphere Sphere (float rad, unsigned slices, unsigned stacks);
 
 #endif /* _GENERATORS_H */

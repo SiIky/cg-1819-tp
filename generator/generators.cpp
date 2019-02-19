@@ -63,7 +63,7 @@ static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsi
 
         struct Rectangle R1 = Rectangle(P1,  P12, P13, PM);
         struct Rectangle R2 = Rectangle(P12, P2,  PM,  P24);
-        struct Rectangle R3 = Rectangle(P13, P3,  PM,  P34);
+        struct Rectangle R3 = Rectangle(P13, PM,  P3,  P34);
         struct Rectangle R4 = Rectangle(PM,  P24, P34, P4);
 
         gen_rectangle_write_intern(outf, R1, ndivs - 1);
@@ -85,12 +85,67 @@ static void gen_box_write_intern (FILE * outf, struct Box box, unsigned ndivs)
 #define p8 box.bottom.P4
 
     gen_rectangle_write_intern(outf, Rectangle(p1, p5, p2, p6), ndivs); /* Back Left */
-    gen_rectangle_write_intern(outf, Rectangle(p1, p5, p3, p7), ndivs); /* Back Right */
-    gen_rectangle_write_intern(outf, box.bottom, ndivs);
+    gen_rectangle_write_intern(outf, Rectangle(p3, p7, p1, p5), ndivs); /* Back Right */
+    gen_rectangle_write_intern(outf, Rectangle(p7, p8, p5, p6), ndivs); /* Base */
 
     gen_rectangle_write_intern(outf, Rectangle(p2, p6, p4, p8), ndivs); /* Front Left */
     gen_rectangle_write_intern(outf, Rectangle(p4, p8, p3, p7), ndivs); /* Front Right */
     gen_rectangle_write_intern(outf, box.top, ndivs);
+}
+
+static void gen_cone_write_intern (FILE * outf, struct Cone c)
+{
+    float a = (float) ((2 * M_PI) / c.ndivs);
+    struct Point O = Point(0, 0, 0);
+    struct Point C = Point(0, c.height, 0);
+
+    for (unsigned i = 0; i < c.ndivs; i++) {
+        float _i = (float) i;
+        float xi = c.rad * sin(_i * a);
+        float zi = c.rad * cos(_i * a);
+
+        float xi1 = c.rad * sin((_i + 1) * a);
+        float zi1 = c.rad * cos((_i + 1) * a);
+
+        struct Point Pi = Point(xi, 0, zi);
+        struct Point Pi1 = Point(xi1, 0, zi1);
+
+        struct Triangle Bi = Triangle(Pi, O, Pi1);
+        struct Triangle Si = Triangle(C, Pi, Pi1);
+
+        gen_triangle_write_intern(outf, Bi);
+        gen_triangle_write_intern(outf, Si);
+    }
+}
+
+static void gen_cylinder_write_intern (FILE * outf, struct Cylinder c)
+{
+    float a = (float) ((2 * M_PI) / c.ndivs);
+    struct Point O = Point(0, 0, 0);
+    struct Point C = Point(0, c.height, 0);
+
+    for (unsigned i = 0; i < c.ndivs; i++) {
+        float _i = (float) i;
+        float xi = c.rad * sin(_i * a);
+        float zi = c.rad * cos(_i * a);
+
+        float xi1 = c.rad * sin((_i + 1) * a);
+        float zi1 = c.rad * cos((_i + 1) * a);
+
+        struct Point PiB = Point(xi, 0, zi);
+        struct Point Pi1B = Point(xi1, 0, zi1);
+
+        struct Point PiT = Point(xi, c.height, zi);
+        struct Point Pi1T = Point(xi1, c.height, zi1);
+
+        struct Triangle Bi = Triangle(PiB, O, Pi1B);
+        struct Rectangle SR = Rectangle(PiT, PiB, Pi1T, Pi1B);
+        struct Triangle Ti = Triangle(C, PiT, Pi1T);
+
+        gen_triangle_write_intern(outf, Bi);
+        gen_rectangle_write_intern(outf, SR, 0);
+        gen_triangle_write_intern(outf, Ti);
+    }
 }
 
 static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
@@ -148,6 +203,8 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
 gen_write(     Triangle,  triangle,  "triangle\n");
 gen_write_divs(Rectangle, rectangle, "rectangle\n");
 gen_write_divs(Box,       box,       "box\n");
+gen_write(     Cone,      cone,      "cone\n");
+gen_write(     Cylinder,  cylinder,  "cylinder\n");
 gen_write(     Sphere,    sphere,    "sphere\n");
 
 /*
@@ -230,6 +287,24 @@ struct Box Box (struct Rectangle top, struct Rectangle bottom)
     struct Box ret;
     ret.top = top;
     ret.bottom = bottom;
+    return ret;
+}
+
+struct Cone Cone (float rad, float height, unsigned ndivs)
+{
+    struct Cone ret;
+    ret.rad = rad;
+    ret.height = height;
+    ret.ndivs = ndivs;
+    return ret;
+}
+
+struct Cylinder Cylinder (float rad, float height, unsigned ndivs)
+{
+    struct Cylinder ret;
+    ret.rad = rad;
+    ret.height = height;
+    ret.ndivs = ndivs;
     return ret;
 }
 

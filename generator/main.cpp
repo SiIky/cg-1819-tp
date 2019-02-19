@@ -16,6 +16,18 @@ int usage_box (const char ** argv)
     return !0;
 }
 
+int usage_cone (const char ** argv)
+{
+    printf("\t%s cone OUTFILE RADIUS HEIGHT NDIVS\n", *argv);
+    return !0;
+}
+
+int usage_cylinder (const char ** argv)
+{
+    printf("\t%s cylinder OUTFILE RADIUS HEIGHT NDIVS\n", *argv);
+    return !0;
+}
+
 int usage_sphere (const char ** argv)
 {
     printf("\t%s sphere OUTFILE RADIUS SLICES STACKS\n", *argv);
@@ -31,6 +43,8 @@ int usage (const char ** argv)
             *argv);
     usage_rectangle(argv);
     usage_box(argv);
+    usage_cone(argv);
+    usage_cylinder(argv);
     usage_sphere(argv);
     return !0;
 }
@@ -77,6 +91,34 @@ int main_box (FILE * outf, int argc, const char ** argv)
     return 0;
 }
 
+int main_cone (FILE * outf, int argc, const char ** argv)
+{
+    if (argc < 6)
+        return usage_cone(argv);
+
+    struct Cone c = Cone(0, 0, 0);
+    sscanf(argv[3], "%f", &c.rad);
+    sscanf(argv[4], "%f", &c.height);
+    sscanf(argv[5], "%u", &c.ndivs);
+
+    gen_cone_write(outf, c);
+    return 0;
+}
+
+int main_cylinder (FILE * outf, int argc, const char ** argv)
+{
+    if (argc < 6)
+        return usage_cylinder(argv);
+
+    struct Cylinder c = Cylinder(0, 0, 0);
+    sscanf(argv[3], "%f", &c.rad);
+    sscanf(argv[4], "%f", &c.height);
+    sscanf(argv[5], "%u", &c.ndivs);
+
+    gen_cylinder_write(outf, c);
+    return 0;
+}
+
 int main_sphere (FILE * outf, int argc, const char ** argv)
 {
     if (argc < 6)
@@ -107,8 +149,10 @@ int main (int argc, const char ** argv)
     (strcmp(argv[1], fig) == 0) ? func(outf, argc, argv)
 
     return
-        cmd("box", main_box):
         cmd("rectangle", main_rectangle):
+        cmd("box", main_box):
+        cmd("cone", main_cone):
+        cmd("cylinder", main_cylinder):
         cmd("sphere", main_sphere):
         usage(argv);
 }
