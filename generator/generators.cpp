@@ -6,12 +6,17 @@
  * INTERNAL FUNCTIONS
  */
 
-static inline struct Point scale_point (float s, struct Point A)
+static inline struct Point operator* (float s, struct Point A)
 {
     return Point(A.x * s, A.y * s, A.z * s);
 }
 
-static inline struct Point add_point (struct Point A, struct Point B)
+static inline struct Point operator* (struct Point A, float s)
+{
+    return s * A;
+}
+
+static inline struct Point operator+ (struct Point A, struct Point B)
 {
     return Point(A.x + B.x, A.y + B.y, A.z + B.z);
 }
@@ -23,12 +28,12 @@ static inline float norm (struct Point v)
 
 static inline float dist (struct Point A, struct Point B)
 {
-    return norm(add_point(scale_point(-1, A), B));
+    return norm((-1 * A) + B);
 }
 
 static inline struct Point normalize (struct Point A)
 {
-    return scale_point(1 / norm(A), A);
+    return 1 / norm(A) * A;
 }
 
 static inline void gen_point_write_intern (FILE * outf, struct Point p)
@@ -62,17 +67,17 @@ static void gen_rectangle_write_nodivs_intern (FILE * outf, struct Rectangle rec
  */
 static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsigned ndivs)
 {
-    const struct Point vw = normalize(add_point(rect.P3, scale_point(-1, rect.P1)));
-    const struct Point vh = normalize(add_point(rect.P2, scale_point(-1, rect.P1)));
+    const struct Point vw = normalize(rect.P3 + (-1 * rect.P1));
+    const struct Point vh = normalize(rect.P2 + (-1 * rect.P1));
     const float w = dist(rect.P3, rect.P1) / (float) ndivs;
     const float h = dist(rect.P2, rect.P1) / (float) ndivs;
 
     for (unsigned i = 1; i <= ndivs; i++) {
         for (unsigned j = 1; j <= ndivs; j++) {
-            struct Point P1 = add_point(rect.P1, add_point(scale_point((float) (i - 1) * w, vw), scale_point((float) (j - 1) * h, vh)));
-            struct Point P2 = add_point(rect.P1, add_point(scale_point((float) (i - 1) * w, vw), scale_point((float)  j      * h, vh)));
-            struct Point P3 = add_point(rect.P1, add_point(scale_point((float)  i      * w, vw), scale_point((float) (j - 1) * h, vh)));
-            struct Point P4 = add_point(rect.P1, add_point(scale_point((float)  i      * w, vw), scale_point((float)  j      * h, vh)));
+            struct Point P1 = rect.P1 + (((float) (i - 1) * w) * vw) + (((float) (j - 1) * h) * vh);
+            struct Point P2 = rect.P1 + (((float) (i - 1) * w) * vw) + (((float)  j      * h) * vh);
+            struct Point P3 = rect.P1 + (((float)  i      * w) * vw) + (((float) (j - 1) * h) * vh);
+            struct Point P4 = rect.P1 + (((float)  i      * w) * vw) + (((float)  j      * h) * vh);
 
             gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
         }

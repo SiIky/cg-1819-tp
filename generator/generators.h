@@ -71,7 +71,7 @@ void gen_rectangle_write (FILE * outf, struct Rectangle rect, unsigned ndivs);
  *    P1------P3  <-- Top rectangle
  *   /|      /|
  *  / |     / |
- * P2-|----P4 |
+ * P2------P4 |
  * |  |    |  |
  * |  P5---|--P7  <-- Bottom rectangle
  * | /     | /
