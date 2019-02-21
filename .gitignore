@@ -37,3 +37,5 @@ figures/sphere/Makefile
 figures/sphere/class2
 figures/sphere/cmake_install.cmake
 figures/sphere/CMakeCache.txt
+engine/build
+generator/Makefile
