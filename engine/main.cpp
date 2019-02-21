@@ -51,7 +51,7 @@ float deg2rad (float deg)
 static const struct Point L  = Point(0, 0, 0);
 static const struct Point Up = Point(0, 1, 0);
 
-static const float r = 10;
+static float r = 10;
 static float a = 315;
 static float b = 45;
 
@@ -99,7 +99,7 @@ void renderScene (void)
     glutSwapBuffers();
 }
 
-void processKeys(unsigned char c, int xx, int yy)
+void processKeys (unsigned char c, int xx, int yy)
 {
     switch (c) {
         case 'w': {
@@ -113,6 +113,13 @@ void processKeys(unsigned char c, int xx, int yy)
         } break;
         case 'd': {
             a += 1;
+        } break;
+
+        case 'k': {
+            r -= 1;
+        } break;
+        case 'j': {
+            r += 1;
         } break;
     }
 
@@ -136,6 +143,7 @@ int main (int argc, char **argv)
     glutInitWindowPosition(100,100);
     glutInitWindowSize(800,800);
     glutCreateWindow("CG@DI-UM");
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Required callback registry 
     glutDisplayFunc(renderScene);

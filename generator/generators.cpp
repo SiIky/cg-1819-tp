@@ -6,6 +6,31 @@
  * INTERNAL FUNCTIONS
  */
 
+static inline struct Point scale_point (float s, struct Point A)
+{
+    return Point(A.x * s, A.y * s, A.z * s);
+}
+
+static inline struct Point add_point (struct Point A, struct Point B)
+{
+    return Point(A.x + B.x, A.y + B.y, A.z + B.z);
+}
+
+static inline float norm (struct Point v)
+{
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+static inline float dist (struct Point A, struct Point B)
+{
+    return norm(add_point(scale_point(-1, A), B));
+}
+
+static inline struct Point normalize (struct Point A)
+{
+    return scale_point(1 / norm(A), A);
+}
+
 static inline void gen_point_write_intern (FILE * outf, struct Point p)
 {
     fprintf(outf, "%f %f %f\n", p.x, p.y, p.z);
@@ -16,6 +41,12 @@ static void gen_triangle_write_intern (FILE * outf, struct Triangle tri)
     gen_point_write_intern(outf, tri.P1);
     gen_point_write_intern(outf, tri.P2);
     gen_point_write_intern(outf, tri.P3);
+}
+
+static void gen_rectangle_write_nodivs_intern (FILE * outf, struct Rectangle rect)
+{
+    gen_triangle_write_intern(outf, Triangle(rect.P1, rect.P2, rect.P3));
+    gen_triangle_write_intern(outf, Triangle(rect.P3, rect.P2, rect.P4));
 }
 
 /**
@@ -31,44 +62,20 @@ static void gen_triangle_write_intern (FILE * outf, struct Triangle tri)
  */
 static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsigned ndivs)
 {
-    if (ndivs == 0) {
-        gen_triangle_write_intern(outf, Triangle(rect.P1, rect.P2, rect.P3));
-        gen_triangle_write_intern(outf, Triangle(rect.P3, rect.P2, rect.P4));
-    } else {
-        struct Point P1 = rect.P1;
-        struct Point P2 = rect.P2;
-        struct Point P3 = rect.P3;
-        struct Point P4 = rect.P4;
+    const struct Point vw = normalize(add_point(rect.P3, scale_point(-1, rect.P1)));
+    const struct Point vh = normalize(add_point(rect.P2, scale_point(-1, rect.P1)));
+    const float w = dist(rect.P3, rect.P1) / (float) ndivs;
+    const float h = dist(rect.P2, rect.P1) / (float) ndivs;
 
-#define MIDPOINT(A, B) Point((A.x + B.x) / 2, (A.y + B.y) / 2, (A.z + B.z) / 2)
-        struct Point P13 = MIDPOINT(P1, P3);
-        struct Point P12 = MIDPOINT(P1, P2);
-        struct Point P24 = MIDPOINT(P2, P4);
-        struct Point P34 = MIDPOINT(P3, P4);
+    for (unsigned i = 1; i <= ndivs; i++) {
+        for (unsigned j = 1; j <= ndivs; j++) {
+            struct Point P1 = add_point(rect.P1, add_point(scale_point((float) (i - 1) * w, vw), scale_point((float) (j - 1) * h, vh)));
+            struct Point P2 = add_point(rect.P1, add_point(scale_point((float) (i - 1) * w, vw), scale_point((float)  j      * h, vh)));
+            struct Point P3 = add_point(rect.P1, add_point(scale_point((float)  i      * w, vw), scale_point((float) (j - 1) * h, vh)));
+            struct Point P4 = add_point(rect.P1, add_point(scale_point((float)  i      * w, vw), scale_point((float)  j      * h, vh)));
 
-        struct Point PM;
-        {
-            struct Point PM1 = MIDPOINT(P12, P34);
-            struct Point PM2 = MIDPOINT(P13, P24);
-            struct Point PM12 = MIDPOINT(PM1, PM2);
-
-            struct Point P14 = MIDPOINT(P1, P4);
-            struct Point P23 = MIDPOINT(P2, P3);
-            struct Point P1423 = MIDPOINT(P14, P23);
-
-            PM = MIDPOINT(PM12, P1423);
+            gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
         }
-#undef MIDPOINT
-
-        struct Rectangle R1 = Rectangle(P1,  P12, P13, PM);
-        struct Rectangle R2 = Rectangle(P12, P2,  PM,  P24);
-        struct Rectangle R3 = Rectangle(P13, PM,  P3,  P34);
-        struct Rectangle R4 = Rectangle(PM,  P24, P34, P4);
-
-        gen_rectangle_write_intern(outf, R1, ndivs - 1);
-        gen_rectangle_write_intern(outf, R2, ndivs - 1);
-        gen_rectangle_write_intern(outf, R3, ndivs - 1);
-        gen_rectangle_write_intern(outf, R4, ndivs - 1);
     }
 }
 
