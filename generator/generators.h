@@ -33,13 +33,14 @@ struct Box {
 struct Cone {
     float rad;
     float height;
-    unsigned ndivs;
+    unsigned slices;
 };
 
 struct Cylinder {
     float rad;
     float height;
-    unsigned ndivs;
+    unsigned slices;
+    unsigned stacks;
 };
 
 struct Sphere {
@@ -122,8 +123,8 @@ struct Point Point (float x, float y, float z);
 struct Triangle Triangle (struct Point P1, struct Point P2, struct Point P3);
 struct Rectangle Rectangle (struct Point P1, struct Point P2, struct Point P3, struct Point P4);
 struct Box Box (struct Rectangle top, struct Rectangle bottom);
-struct Cone Cone (float rad, float height, unsigned ndivs);
-struct Cylinder Cylinder (float rad, float height, unsigned ndivs);
+struct Cone Cone (float rad, float height, unsigned slices);
+struct Cylinder Cylinder (float rad, float height, unsigned slices, unsigned stacks);
 struct Sphere Sphere (float rad, unsigned slices, unsigned stacks);
 
 #endif /* _GENERATORS_H */

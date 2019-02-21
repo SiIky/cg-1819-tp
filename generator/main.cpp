@@ -18,13 +18,13 @@ int usage_box (const char ** argv)
 
 int usage_cone (const char ** argv)
 {
-    printf("\t%s cone OUTFILE RADIUS HEIGHT NDIVS\n", *argv);
+    printf("\t%s cone OUTFILE RADIUS HEIGHT SLICES\n", *argv);
     return !0;
 }
 
 int usage_cylinder (const char ** argv)
 {
-    printf("\t%s cylinder OUTFILE RADIUS HEIGHT NDIVS\n", *argv);
+    printf("\t%s cylinder OUTFILE RADIUS HEIGHT SLICES STACKS\n", *argv);
     return !0;
 }
 
@@ -99,7 +99,7 @@ int main_cone (FILE * outf, int argc, const char ** argv)
     struct Cone c = Cone(0, 0, 0);
     sscanf(argv[3], "%f", &c.rad);
     sscanf(argv[4], "%f", &c.height);
-    sscanf(argv[5], "%u", &c.ndivs);
+    sscanf(argv[5], "%u", &c.slices);
 
     gen_cone_write(outf, c);
     return 0;
@@ -107,13 +107,14 @@ int main_cone (FILE * outf, int argc, const char ** argv)
 
 int main_cylinder (FILE * outf, int argc, const char ** argv)
 {
-    if (argc < 6)
+    if (argc < 7)
         return usage_cylinder(argv);
 
-    struct Cylinder c = Cylinder(0, 0, 0);
+    struct Cylinder c = Cylinder(0, 0, 0, 0);
     sscanf(argv[3], "%f", &c.rad);
     sscanf(argv[4], "%f", &c.height);
-    sscanf(argv[5], "%u", &c.ndivs);
+    sscanf(argv[5], "%u", &c.slices);
+    sscanf(argv[6], "%u", &c.stacks);
 
     gen_cylinder_write(outf, c);
     return 0;
