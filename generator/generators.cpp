@@ -1,6 +1,6 @@
 /**
  * Graphical Primitive Generator (Figure Generator)
- * Last Updated: 20-02-2019 by Paulo Barbosa 
+ * Last Updated: 22-02-2019
  */
 
 #include "generators.h"
