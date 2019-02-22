@@ -1,40 +1,83 @@
+/**
+ * Graphical Primitive Generator (Figure Generator)
+ * Last Updated: 20-02-2019 by Paulo Barbosa 
+ */
+
 #include "generators.h"
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 /*
- * INTERNAL FUNCTIONS
+ * Internal Functions
  */
 
-static inline struct Point operator* (float s, struct Point A)
+/**
+ * @brief Performs the scalar operation on a point.
+ * @param s - Scalar value.
+ * @param A - Point.
+ * @returns Returns the point with the X, Y and Z axis values scaled by s.
+ */
+static inline struct Point operator* (float s, struct Point A) 
 {
     return Point(A.x * s, A.y * s, A.z * s);
 }
 
+/**
+ * @brief Performs the scalar operation on a point.
+ * @param s - Scalar value.
+ * @param A - Point.
+ * @returns Returns the point with the X, Y and Z axis values scaled by s.
+ */
 static inline struct Point operator* (struct Point A, float s)
 {
     return s * A;
 }
 
+/**
+ * @brief Performs the addition of two points.
+ * @param A - First point.
+ * @param B - Second point.
+ * @returns Returns the result of adding both input points .
+ */
 static inline struct Point operator+ (struct Point A, struct Point B)
 {
     return Point(A.x + B.x, A.y + B.y, A.z + B.z);
 }
 
+/**
+ * @brief Calculates the norm of a point.
+ * @param v - Given point.
+ * @returns Returns the result of the operation.
+ */
 static inline float norm (struct Point v)
 {
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
+/**
+ * @brief Calculates the distance between two points.
+ * @param A - First point.
+ * @param B - Second point.
+ * @returns Returns the distance between the two given points. 
+ */
 static inline float dist (struct Point A, struct Point B)
 {
     return norm((-1 * A) + B);
 }
 
+/**
+ * @brief Operation for normalizing a point.
+ * @param A - Input point.
+ * @returns Returns the result of normalizing the input point.
+ *
+ */
 static inline struct Point normalize (struct Point A)
 {
     return 1 / norm(A) * A;
 }
+
+// Already documented in generators.h // 
 
 static inline void gen_point_write_intern (FILE * outf, struct Point p)
 {
@@ -86,14 +129,14 @@ static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsi
 
 static void gen_box_write_intern (FILE * outf, struct Box box, unsigned ndivs)
 {
-#define p1 box.top.P1
-#define p2 box.top.P2
-#define p3 box.top.P3
-#define p4 box.top.P4
-#define p5 box.bottom.P1
-#define p6 box.bottom.P2
-#define p7 box.bottom.P3
-#define p8 box.bottom.P4
+#   define p1 box.top.P1
+#   define p2 box.top.P2
+#   define p3 box.top.P3
+#   define p4 box.top.P4
+#   define p5 box.bottom.P1
+#   define p6 box.bottom.P2
+#   define p7 box.bottom.P3
+#   define p8 box.bottom.P4
 
     gen_rectangle_write_intern(outf, Rectangle(p1, p5, p2, p6), ndivs); /* Back Left */
     gen_rectangle_write_intern(outf, Rectangle(p3, p7, p1, p5), ndivs); /* Back Right */
@@ -177,11 +220,22 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
     verts.reserve((sph.slices + 1) * (sph.stacks + 1));
 
     for (unsigned i = 0; i <= sph.stacks; i++) {
+	/* Stacks range between 0 and 180 degrees (pi).
+         * lat represents the current stack step (limited by the total number of stacks)
+         */ 
         double lat = ((double) i) / ((double) sph.stacks) * M_PI;
 
         for (unsigned j = 0; j <= sph.slices; j++) {
+            /* Slices range between 0 and 360 degrees (2 * pi).
+             * lon represents the current slice step (limited by the total number of slices)
+             */
             double lon = ((double) j) / ((double) sph.slices) * 2 * M_PI;
 
+            /* Knowing the latitude and longitude (lat and lon, resp.) we can calculate X, Y and Z as follows:
+             * X = r * cos(lon) * sin(lat)
+             * Y = r * cos(lat)
+             * Z = r * sin(lon) * sin(lat)
+             */
             double clat = cos(lat);
             double clon = cos(lon);
             double slat = sin(lat);
@@ -195,6 +249,7 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
         }
     }
 
+    /* Draws the sphere. */
     unsigned len = sph.slices * sph.stacks + sph.slices;
     for (unsigned i = 0; i < len; i++) {
         struct Point P1 = verts[i];
@@ -207,8 +262,8 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
     }
 }
 
-/*
- * WRITE
+/**
+ * @brief Writing functions.
  */
 
 #define gen_write(Fig, fig, id) \
@@ -230,8 +285,8 @@ gen_write(     Cone,      cone,      "cone\n");
 gen_write(     Cylinder,  cylinder,  "cylinder\n");
 gen_write(     Sphere,    sphere,    "sphere\n");
 
-/*
- * READ
+/**
+ * @brief Reading Functions.
  */
 
 void gen_model_read (FILE * inf, std::vector<struct Point> * vec)
@@ -246,8 +301,8 @@ void gen_model_read (FILE * inf, std::vector<struct Point> * vec)
     }
 }
 
-/*
- * UTILITY
+/**
+ * @brief Utility functions.
  */
 
 struct Rectangle gen_rectangle_from_wd (float width, float depth)

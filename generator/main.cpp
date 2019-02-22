@@ -1,39 +1,73 @@
+/**
+ * Graphical Primitive Generator (Main Module)
+ * Last Updated: 22-02-2019
+ */
+
 #include "generators.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int usage_rectangle (const char ** argv)
-{
+/**
+ * @brief Display the user information on how to build a rectangle.
+ * @param argv - Programme name (function will only be called if argv < 2).
+ * @return 0, for success.
+ */
+int usage_rectangle (const char ** argv) {
     printf("\t%s rectangle OUTFILE WIDTH DEPTH [NDIVS]\n", *argv);
     return !0;
 }
 
-int usage_box (const char ** argv)
+/**
+ * @brief Display the user information on how to build a box.
+ * @param argv - Programme name (function will only be called if argv < 2).
+ * @return 0, for success.
+ */
+int rusage_box (const char ** argv)
 {
     printf("\t%s box OUTFILE WIDTH HEIGHT DEPTH [NDIVS]\n", *argv);
     return !0;
 }
 
+/**
+ * @brief Display the user information on how to build a cone.
+ * @param argv - Programme name (function will only be called if argv < 2).
+ * @return 0, for success.
+ */
 int usage_cone (const char ** argv)
 {
     printf("\t%s cone OUTFILE RADIUS HEIGHT SLICES\n", *argv);
     return !0;
 }
 
+/**
+ * @brief Display the user information on how to build a cylinder.
+ * @param argv - Programme name (function will only be called if argv < 2).
+ * @return 0, for success.
+ */
 int usage_cylinder (const char ** argv)
 {
     printf("\t%s cylinder OUTFILE RADIUS HEIGHT SLICES STACKS\n", *argv);
     return !0;
 }
 
+/**
+ * @brief Display the user information on how to build a sphere.
+ * @param argv - Programme name (function will only be called if argv < 2).
+ * @return 0, for success.
+ */
 int usage_sphere (const char ** argv)
 {
     printf("\t%s sphere OUTFILE RADIUS SLICES STACKS\n", *argv);
     return !0;
 }
 
+/** 
+ * @brief Displays the user information on how to run the programme.
+ * @param argv - Programme name (function will only be called if argv < 2).
+ * @return 0, for success.
+ */
 int usage (const char ** argv)
 {
     printf(
@@ -49,6 +83,12 @@ int usage (const char ** argv)
     return !0;
 }
 
+/**
+ * @brief Main function for generating a rectangle. 
+ * @param argc - Number of given arguments.
+ * @param argv - Argument values.
+ * @return 0, for success.
+ */
 int main_rectangle (FILE * outf, int argc, const char ** argv)
 {
     if (argc < 5)
@@ -69,6 +109,12 @@ int main_rectangle (FILE * outf, int argc, const char ** argv)
     return 0;
 }
 
+/**
+ * @brief Main function for generating a box. 
+ * @param argc - Number of given arguments.
+ * @param argv - Argument values.
+ * @return 0, for success.
+ */
 int main_box (FILE * outf, int argc, const char ** argv)
 {
     if (argc < 6)
@@ -91,6 +137,12 @@ int main_box (FILE * outf, int argc, const char ** argv)
     return 0;
 }
 
+/**
+ * @brief Main function for generating a cone. 
+ * @param argc - Number of given arguments.
+ * @param argv - Argument values.
+ * @return 0, for success.
+ */
 int main_cone (FILE * outf, int argc, const char ** argv)
 {
     if (argc < 6)
@@ -105,6 +157,12 @@ int main_cone (FILE * outf, int argc, const char ** argv)
     return 0;
 }
 
+/**
+ * @brief Main function for generating a cylinder. 
+ * @param argc - Number of given arguments.
+ * @param argv - Argument values.
+ * @return 0, for success.
+ */
 int main_cylinder (FILE * outf, int argc, const char ** argv)
 {
     if (argc < 7)
@@ -120,6 +178,12 @@ int main_cylinder (FILE * outf, int argc, const char ** argv)
     return 0;
 }
 
+/**
+ * @brief Main function for generating a sphere. 
+ * @param argc - Number of given arguments.
+ * @param argv - Argument values.
+ * @return 0, for success.
+ */
 int main_sphere (FILE * outf, int argc, const char ** argv)
 {
     if (argc < 6)
