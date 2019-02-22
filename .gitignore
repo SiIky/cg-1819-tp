@@ -32,10 +32,9 @@
 *.app
 *.3d
 generator/generate
-CMakeFiles
-figures/sphere/Makefile
-figures/sphere/class2
-figures/sphere/cmake_install.cmake
-figures/sphere/CMakeCache.txt
+engine/engine
 engine/build
-generator/Makefile
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile

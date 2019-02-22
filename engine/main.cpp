@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "../generator/generators.h"
+#include "scene.h"
 
 int usage (const char * cmd)
 {
@@ -132,11 +133,8 @@ int main (int argc, char **argv)
     if (argc < 2)
         return usage(*argv);
 
-    {
-        FILE * inf = fopen(argv[1], "r");
-	gen_model_read(inf, &TrianglePoints);
-	fclose(inf);
-    }
+    if (!sc_load_file(argv[1], &TrianglePoints))
+        return !0;
 
     // init GLUT and the window
     glutInit(&argc, argv);
@@ -160,5 +158,5 @@ int main (int argc, char **argv)
     // enter GLUT's main cycle
     glutMainLoop();
 
-    return 1;
+    return !0;
 }

@@ -5,7 +5,7 @@ PROJECT(engine)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_executable(${PROJECT_NAME} main.cpp ../generator/generators.cpp)
+add_executable(${PROJECT_NAME} main.cpp scene.cpp ../generator/generators.cpp pugixml/pugixml.cpp)
 
 find_package(OpenGL REQUIRED)
 include_directories(${OpenGL_INCLUDE_DIRS})
@@ -45,8 +45,4 @@ else (WIN32) #Linux and Mac
 	
 endif(WIN32)
 
-
-
-
-
-
+set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wall")
