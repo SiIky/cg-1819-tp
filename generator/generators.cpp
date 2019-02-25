@@ -147,29 +147,314 @@ static void gen_box_write_intern (FILE * outf, struct Box box, unsigned ndivs)
     gen_rectangle_write_intern(outf, box.top, ndivs);
 }
 
+static void gen_xmas_tree0_write_intern (FILE * outf, struct Cone c)
+{
+	float a = (float) ((2 * M_PI) / c.slices);
+	struct Point O = Point(0, 0, 0);
+
+	for (unsigned i = 0; i < c.slices; i++) {
+		const float I = (float) i;
+
+		/* draw top mini cone */
+		{
+			const float R = c.rad / c.stacks;
+			const float H = c.height * ((c.stacks - 1) / c.stacks);
+
+			const float xi = R * sin(I * a);
+			const float zi = R * cos(I * a);
+
+			const float xi1 = R * sin((I + 1) * a);
+			const float zi1 = R * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(0, c.height, 0),
+						Point(xi, H, zi),
+						Point(xi1, H, zi1)));
+		}
+
+		/* draw base */
+		{
+			const float xi = c.rad * sin(I * a);
+			const float zi = c.rad * cos(I * a);
+
+			const float xi1 = c.rad * sin((I + 1) * a);
+			const float zi1 = c.rad * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(xi,  0, zi),
+						Point(0,   0, 0),
+						Point(xi1, 0, zi1)));
+		}
+
+		/* draw side */
+		for (unsigned j = 0; j < c.stacks - 1; j++) {
+			const float J = (float) j;
+
+			const float r1 = c.rad * ((c.stacks - J)       / c.stacks);
+			const float r  = c.rad * ((c.stacks - (J + 1)) / c.stacks);
+
+			const float y  = c.height * (J / c.stacks);
+			const float y1 = c.height * ((J + 1) / c.stacks);
+
+			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
+			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
+			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
+			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
+
+			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+		}
+	}
+}
+
+static void gen_xmas_tree1_write_intern (FILE * outf, struct Cone c)
+{
+	float a = (float) ((2 * M_PI) / c.slices);
+	struct Point O = Point(0, 0, 0);
+
+	for (unsigned i = 0; i < c.slices; i++) {
+		const float I = (float) i;
+
+		/* draw top mini cone */
+		{
+			const float R = c.rad / c.stacks;
+			const float H = c.height * ((c.stacks - 1) / c.stacks);
+
+			const float xi = R * sin(I * a);
+			const float zi = R * cos(I * a);
+
+			const float xi1 = R * sin((I + 1) * a);
+			const float zi1 = R * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(0, c.height, 0),
+						Point(xi, H, zi),
+						Point(xi1, H, zi1)));
+		}
+
+		/* draw base */
+		{
+			const float xi = c.rad * sin(I * a);
+			const float zi = c.rad * cos(I * a);
+
+			const float xi1 = c.rad * sin((I + 1) * a);
+			const float zi1 = c.rad * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(xi,  0, zi),
+						Point(0,   0, 0),
+						Point(xi1, 0, zi1)));
+		}
+
+		/* draw side */
+		for (unsigned j = 0; j < c.stacks - 1; j++) {
+			const float J = (float) j;
+
+			const float y  = c.height * (J / c.stacks);
+			const float y1 = c.height * ((J + 1) / c.stacks);
+
+			const float r  = c.rad * y;
+			const float r1 = c.rad * y1;
+
+			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
+			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
+			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
+			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
+
+			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+		}
+	}
+}
+
+static void gen_xmas_tree2_write_intern (FILE * outf, struct Cone c)
+{
+	float a = (float) ((2 * M_PI) / c.slices);
+	struct Point O = Point(0, 0, 0);
+
+	for (unsigned i = 0; i < c.slices; i++) {
+		const float I = (float) i;
+
+		/* draw top mini cone */
+		{
+			const float R = c.rad / c.stacks;
+			const float H = c.height * ((c.stacks - 1) / c.stacks);
+
+			const float xi = R * sin(I * a);
+			const float zi = R * cos(I * a);
+
+			const float xi1 = R * sin((I + 1) * a);
+			const float zi1 = R * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(0, c.height, 0),
+						Point(xi, H, zi),
+						Point(xi1, H, zi1)));
+		}
+
+		/* draw base */
+		{
+			const float xi = c.rad * sin(I * a);
+			const float zi = c.rad * cos(I * a);
+
+			const float xi1 = c.rad * sin((I + 1) * a);
+			const float zi1 = c.rad * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(xi,  0, zi),
+						Point(0,   0, 0),
+						Point(xi1, 0, zi1)));
+		}
+
+		/* draw side */
+		for (unsigned j = 0; j < c.stacks - 1; j++) {
+			const float J = (float) j;
+
+			const float y  = c.height * (J / c.stacks);
+			const float y1 = c.height * ((J + 1) / c.stacks);
+
+			const float r  = c.rad * y  / c.height;
+			const float r1 = c.rad * y1 / c.height;
+
+			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
+			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
+			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
+			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
+
+			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+		}
+	}
+}
+
+static void gen_xmas_tree3_write_intern (FILE * outf, struct Cone c)
+{
+	const float a = (float) ((2 * M_PI) / (float) c.slices);
+	const struct Point O = Point(0, 0, 0);
+	const float st = (float) c.stacks;
+
+	for (unsigned i = 0; i < c.slices; i++) {
+		const float I = (float) i;
+
+		/* draw top mini cone */
+		{
+			const float R = c.rad / st;
+			const float H = c.height * (st - 1) / st;
+
+			const float xi = R * sin(I * a);
+			const float zi = R * cos(I * a);
+
+			const float xi1 = R * sin((I + 1) * a);
+			const float zi1 = R * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(0,   c.height, 0),
+						Point(xi,  H,        zi),
+						Point(xi1, H,        zi1)));
+		}
+
+		/* draw base */
+		{
+			const float xi = c.rad * sin(I * a);
+			const float zi = c.rad * cos(I * a);
+
+			const float xi1 = c.rad * sin((I + 1) * a);
+			const float zi1 = c.rad * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(xi,  0, zi),
+						Point(0,   0, 0),
+						Point(xi1, 0, zi1)));
+		}
+
+		/* draw side */
+		for (unsigned j = 0; j < (c.stacks - 1); j++) {
+			const float J = (float) j;
+
+			const float y  = c.height * ((J + 1) / st);
+			const float y1 = c.height * (J / st);
+
+			const float r  = c.rad * y  / c.height;
+			const float r1 = c.rad * y1 / c.height;
+
+			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
+			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
+			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
+			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
+
+			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+		}
+	}
+}
+
+/*
+ * i -> line/stack
+ * j -> slice
+ *
+ *       ^
+ *      /|\
+ *     / | \
+ *    /  |  \    <- Pij = (ri * sin(2j*pi/slices), h - , ri * cos(2j*pi/slices))
+ *   /  h|   \
+ *  /    |    \
+ * ------+------
+ *    r
+ */
 static void gen_cone_write_intern (FILE * outf, struct Cone c)
 {
-    float a = (float) ((2 * M_PI) / c.slices);
-    struct Point O = Point(0, 0, 0);
-    struct Point C = Point(0, c.height, 0);
+	const float a = (float) ((2 * M_PI) / (float) c.slices);
+	const struct Point O = Point(0, 0, 0);
+	const float st = (float) c.stacks;
 
-    for (unsigned i = 0; i < c.slices; i++) {
-        float _i = (float) i;
-        float xi = c.rad * sin(_i * a);
-        float zi = c.rad * cos(_i * a);
+	for (unsigned i = 0; i < c.slices; i++) {
+		const float I = (float) i;
 
-        float xi1 = c.rad * sin((_i + 1) * a);
-        float zi1 = c.rad * cos((_i + 1) * a);
+		/* draw top mini cone */
+		{
+			const float R = c.rad / st;
+			const float H = c.height * (st - 1) / st;
 
-        struct Point Pi = Point(xi, 0, zi);
-        struct Point Pi1 = Point(xi1, 0, zi1);
+			const float xi = R * sin(I * a);
+			const float zi = R * cos(I * a);
 
-        struct Triangle Bi = Triangle(Pi, O, Pi1);
-        struct Triangle Si = Triangle(C, Pi, Pi1);
+			const float xi1 = R * sin((I + 1) * a);
+			const float zi1 = R * cos((I + 1) * a);
 
-        gen_triangle_write_intern(outf, Bi);
-        gen_triangle_write_intern(outf, Si);
-    }
+			gen_triangle_write_intern(outf, Triangle(
+						Point(0,   c.height, 0),
+						Point(xi,  H,        zi),
+						Point(xi1, H,        zi1)));
+		}
+
+		/* draw base */
+		{
+			const float xi = c.rad * sin(I * a);
+			const float zi = c.rad * cos(I * a);
+
+			const float xi1 = c.rad * sin((I + 1) * a);
+			const float zi1 = c.rad * cos((I + 1) * a);
+
+			gen_triangle_write_intern(outf, Triangle(
+						Point(xi,  0, zi),
+						Point(0,   0, 0),
+						Point(xi1, 0, zi1)));
+		}
+
+		/* draw side */
+		for (unsigned j = 0; j < (c.stacks - 1); j++) {
+			const float J = (float) j;
+
+			const float y  = c.height * (J       / st);
+			const float y1 = c.height * ((J + 1) / st);
+
+			const float r  = c.rad * (st - J)     / st;
+			const float r1 = c.rad * (st - J - 1) / st;
+
+			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
+			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
+			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
+			const struct Point P4 = Point(r  * sin((I + 1) * a),  y,  r  * cos((I + 1) * a));
+
+			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+		}
+	}
 }
 
 static void gen_cylinder_write_intern (FILE * outf, struct Cylinder c)
@@ -180,12 +465,12 @@ static void gen_cylinder_write_intern (FILE * outf, struct Cylinder c)
     struct Point C = Point(0,  c.height / 2, 0);
 
     for (unsigned i = 0; i < c.slices; i++) {
-        float _i = (float) i;
-        float xi = c.rad * sin(_i * a);
-        float zi = c.rad * cos(_i * a);
+        float I = (float) i;
+        float xi = c.rad * sin(I * a);
+        float zi = c.rad * cos(I * a);
 
-        float xi1 = c.rad * sin((_i + 1) * a);
-        float zi1 = c.rad * cos((_i + 1) * a);
+        float xi1 = c.rad * sin((I + 1) * a);
+        float zi1 = c.rad * cos((I + 1) * a);
 
         struct Point PiB  = Point(xi,  -c.height / 2, zi);
         struct Point Pi1B = Point(xi1, -c.height / 2, zi1);
@@ -382,12 +667,13 @@ struct Box Box (struct Rectangle top, struct Rectangle bottom)
     return ret;
 }
 
-struct Cone Cone (float rad, float height, unsigned slices)
+struct Cone Cone (float rad, float height, unsigned slices, unsigned stacks)
 {
     struct Cone ret;
     ret.rad = rad;
     ret.height = height;
     ret.slices = slices;
+    ret.stacks = stacks;
     return ret;
 }
 

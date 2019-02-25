@@ -54,6 +54,7 @@ struct Cone {
     float rad;          // radius
     float height;
     unsigned slices;
+    unsigned stacks;
 };
 
 /**
@@ -247,7 +248,7 @@ struct Box Box (struct Rectangle top, struct Rectangle bottom);
  * @param slices - Slices.
  * @returns Generated cone by input. 
  */
-struct Cone Cone (float rad, float height, unsigned slices);
+struct Cone Cone (float rad, float height, unsigned slices, unsigned stacks);
 
 /**
  * @brief "Constructor" for a Cylinder.

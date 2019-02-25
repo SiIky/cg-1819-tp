@@ -24,7 +24,7 @@ int usage_rectangle (const char ** argv) {
  * @param argv - Programme name (function will only be called if argv < 2).
  * @return 0, for success.
  */
-int rusage_box (const char ** argv)
+int usage_box (const char ** argv)
 {
     printf("\t%s box OUTFILE WIDTH HEIGHT DEPTH [NDIVS]\n", *argv);
     return !0;
@@ -37,7 +37,7 @@ int rusage_box (const char ** argv)
  */
 int usage_cone (const char ** argv)
 {
-    printf("\t%s cone OUTFILE RADIUS HEIGHT SLICES\n", *argv);
+    printf("\t%s cone OUTFILE RADIUS HEIGHT SLICES STACKS\n", *argv);
     return !0;
 }
 
@@ -145,13 +145,14 @@ int main_box (FILE * outf, int argc, const char ** argv)
  */
 int main_cone (FILE * outf, int argc, const char ** argv)
 {
-    if (argc < 6)
+    if (argc < 7)
         return usage_cone(argv);
 
-    struct Cone c = Cone(0, 0, 0);
+    struct Cone c = Cone(0, 0, 0, 0);
     sscanf(argv[3], "%f", &c.rad);
     sscanf(argv[4], "%f", &c.height);
     sscanf(argv[5], "%u", &c.slices);
+    sscanf(argv[6], "%u", &c.stacks);
 
     gen_cone_write(outf, c);
     return 0;
