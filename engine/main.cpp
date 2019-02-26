@@ -123,6 +123,16 @@ void processKeys (unsigned char c, int xx, int yy)
         case 'j': {
             r += 1;
         } break;
+
+        case '.': {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        } break;
+        case '-': {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } break;
+        case '#': {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        } break;
     }
 
     glutPostRedisplay();

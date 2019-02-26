@@ -23,6 +23,11 @@ static inline struct Point operator* (float s, struct Point A)
     return Point(A.x * s, A.y * s, A.z * s);
 }
 
+static inline struct Point operator/ (struct Point A, float s)
+{
+    return Point(A.x / s, A.y / s, A.z / s);
+}
+
 /**
  * @brief Performs the scalar operation on a point.
  * @param s - Scalar value.
@@ -127,24 +132,51 @@ static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsi
     }
 }
 
+static struct Point zipWith_mul (struct Point A, struct Point B)
+{
+    return Point(A.x * B.x, A.y * B.y, A.z * B.z);
+}
+
+static struct Point rep (unsigned k)
+{
+    static const struct Point ret[] = {
+        Point(1,  0,  0),
+        Point(-1, 0,  0),
+        Point(0,  1,  0),
+        Point(0,  -1, 0),
+        Point(0,  0,  1),
+        Point(0,  0,  -1),
+    };
+    return ret[k % 6];
+}
+
 static void gen_box_write_intern (FILE * outf, struct Box box, unsigned ndivs)
 {
 #   define p1 box.top.P1
 #   define p2 box.top.P2
 #   define p3 box.top.P3
-#   define p4 box.top.P4
 #   define p5 box.bottom.P1
-#   define p6 box.bottom.P2
-#   define p7 box.bottom.P3
-#   define p8 box.bottom.P4
 
-    gen_rectangle_write_intern(outf, Rectangle(p1, p5, p2, p6), ndivs); /* Back Left */
-    gen_rectangle_write_intern(outf, Rectangle(p3, p7, p1, p5), ndivs); /* Back Right */
-    gen_rectangle_write_intern(outf, Rectangle(p7, p8, p5, p6), ndivs); /* Base */
+    const struct Point C = Point(p3.x - p1.x, p5.y - p1.y, p2.z - p1.z) / 2;
 
-    gen_rectangle_write_intern(outf, Rectangle(p2, p6, p4, p8), ndivs); /* Front Left */
-    gen_rectangle_write_intern(outf, Rectangle(p4, p8, p3, p7), ndivs); /* Front Right */
-    gen_rectangle_write_intern(outf, box.top, ndivs);
+    for (unsigned k = 0; k < 6; k++) {
+        const struct Point K  = rep(k);
+        const struct Point Ki = rep(k + 2);
+        const struct Point Kj = rep(k + 4);
+
+        for (unsigned i = 1; i < ndivs; i++) {
+            for (unsigned j = 1; j < ndivs; j++) {
+//#define P(i, j) (zipWith_mul(C, K + ((1 - 2 * (i) / ndivs) * Ki) + ((1 - 2 * (j) / ndivs) * Kj)))
+#define P(i, j) (zipWith_mul(C, K + (2 * (i) * Ki / ndivs) + (2 * (j) * Kj / ndivs)))
+                const struct Point P1 = P(i - 1, j - 1);
+                const struct Point P2 = P(i - 1, j);
+                const struct Point P3 = P(i,     j - 1);
+                const struct Point P4 = P(i,     j);
+
+                gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+            }
+        }
+    }
 }
 
 static void gen_xmas_tree0_write_intern (FILE * outf, struct Cone c)
