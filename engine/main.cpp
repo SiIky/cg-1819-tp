@@ -16,7 +16,7 @@
 
 int usage (const char * cmd)
 {
-    printf("%s 3DFILE\n", cmd);
+    printf("%s SCENE_FILE\n", cmd);
     return !0;
 }
 
@@ -57,7 +57,7 @@ static float r = 10;
 static float a = 315;
 static float b = 45;
 
-static std::vector<struct Point> TrianglePoints;
+static struct scene scene;
 
 void renderScene (void)
 {
@@ -90,12 +90,6 @@ void renderScene (void)
         glVertex3f(0, 0, 500);
     }
     glEnd();
-
-    glBegin(GL_TRIANGLES); {
-        glColor3ub(100, 100, 100);
-        for (auto t : TrianglePoints)
-            glVertex3f(t.x, t.y, t.z);
-    } glEnd();
 
     // End of frame
     glutSwapBuffers();
@@ -133,7 +127,7 @@ int main (int argc, char **argv)
     if (argc < 2)
         return usage(*argv);
 
-    if (!sc_load_file(argv[1], &TrianglePoints))
+    if (!sc_load_file(argv[1], &scene))
         return !0;
 
     // init GLUT and the window
