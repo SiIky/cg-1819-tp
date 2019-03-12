@@ -91,6 +91,8 @@ void renderScene (void)
     }
     glEnd();
 
+    sc_draw(&scene);
+
     // End of frame
     glutSwapBuffers();
 }

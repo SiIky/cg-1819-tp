@@ -33,5 +33,6 @@ struct scene {
 };
 
 bool sc_load_file (const char * path, struct scene * scene);
+void sc_draw      (struct scene * scene);
 
 #endif /* _SCENE_H */

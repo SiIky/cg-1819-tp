@@ -3,10 +3,59 @@
 #include "pugixml/pugixml.hpp"
 #include "../generator/generators.h"
 
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif
+
 #include <string.h>
+#include <assert.h>
+
 
 #define match(tag, func) \
 	if (strcmp(tag, trans.name()) == 0) func(trans, scene, group)
+
+static void sc_draw_group (struct scene * scene, struct group * group)
+{
+	for (struct gt gt : group->gt) {
+		switch (gt.type) {
+			case GT_TRANSLATE:
+				glTranslatef(gt.p.x, gt.p.y, gt.p.z);
+				break;
+			case GT_ROTATE:
+				glRotatef(gt.angle, gt.p.x, gt.p.y, gt.p.z);
+				break;
+			case GT_SCALE:
+				glScalef(gt.p.x, gt.p.y, gt.p.z);
+				break;
+			default: assert(!"po caralho");
+		}
+	}
+
+	glBegin(GL_TRIANGLES);
+	for (auto mname : group->models) {
+		std::vector<struct Point> model = scene->models[mname];
+		for (auto p : model)
+			glVertex3f(p.x, p.y, p.z);
+	}
+	glEnd();
+
+	for (auto subgroup : group->subgroups) {
+		glPushMatrix();
+		sc_draw_group(scene, subgroup);
+		glPopMatrix();
+	}
+}
+
+void sc_draw (struct scene * scene)
+{
+	for (struct group * group : scene->groups) {
+		glPushMatrix();
+		sc_draw_group(scene, group);
+		glPopMatrix();
+	}
+}
 
 static void sc_load_model (const char * fname, std::vector<struct Point> * vec)
 {
@@ -27,18 +76,21 @@ static void sc_load_models (pugi::xml_node node, struct scene * scene, struct gr
 		scene->models[fname] = model;
 	    }
 
-            group->models.push_back(trans.name());
+            group->models.push_back(fname);
 	}
     }
 }
+
+#define maybe(atr, def) ((atr) ? atr.as_float() : (def))
 
 static void sc_load_rotate (pugi::xml_node node, struct scene * scene, struct group * group)
 {
     struct gt rotate;
     rotate.type = GT_ROTATE;
-    /*
-     * TODO: LER O CARALHO DO VECTOR
-     */
+    rotate.angle = maybe(node.attribute("ANGLE"), 0);
+    rotate.p.x = maybe(node.attribute("X"), 0);
+    rotate.p.y = maybe(node.attribute("Y"), 0);
+    rotate.p.z = maybe(node.attribute("Z"), 0);
     group->gt.push_back(rotate);
 }
 
@@ -46,9 +98,9 @@ static void sc_load_scale (pugi::xml_node node, struct scene * scene, struct gro
 {
     struct gt scale;
     scale.type = GT_SCALE;
-    /*
-     * TODO: LER O CARALHO DO VECTOR
-     */
+    scale.p.x = maybe(node.attribute("X"), 1);
+    scale.p.y = maybe(node.attribute("Y"), 1);
+    scale.p.z = maybe(node.attribute("Z"), 1);
     group->gt.push_back(scale);
 }
 
@@ -56,9 +108,9 @@ static void sc_load_translate (pugi::xml_node node, struct scene * scene, struct
 {
     struct gt translate;
     translate.type = GT_TRANSLATE;
-    /*
-     * TODO: LER O CARALHO DO VECTOR
-     */
+    translate.p.x = maybe(node.attribute("X"), 0);
+    translate.p.y = maybe(node.attribute("Y"), 0);
+    translate.p.z = maybe(node.attribute("Z"), 0);
     group->gt.push_back(translate);
 }
 
