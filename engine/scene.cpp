@@ -122,9 +122,9 @@ static void sc_load_group (pugi::xml_node node, struct scene * scene, struct gro
         else match("scale", sc_load_scale);
         else match("models", sc_load_models);
         else if (strcmp("group", trans.name()) == 0) {
-            struct group * group = (struct group*) calloc(1, sizeof(struct group));
-            sc_load_group(trans, scene, group);
-            group->subgroups.push_back(group);
+            struct group * subgroup = (struct group*) calloc(1, sizeof(struct group));
+            sc_load_group(trans, scene, subgroup);
+            group->subgroups.push_back(subgroup);
         }
     }
 }
