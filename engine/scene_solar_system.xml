@@ -4,61 +4,69 @@
 		<models>
 			<model file="../assets/sphere.3d"/>
 		</models>
-	</group>
-	<group>
-		<translate X="100"/>
-		<scale X="0.1" Y="0.1" Z="0.1"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
-	</group>
-	<group>
-		<translate X="200"/>
-		<scale X="0.25" Y="0.25" Z="0.25"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
-	</group>
-	<group>
-		<translate X="300"/>
-		<scale X="0.27" Y="0.27" Z="0.27"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
-	</group>
-	<group>
-		<translate X="425"/>
-		<scale X="0.2" Y="0.2" Z="0.2"/>	
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
-	</group>
-	<group>
-		<translate X="1500"/>
-		<scale X="2" Y="2" Z="2"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
-	</group>
-	<group>
-		<translate X="2800"/>
-		<scale X="1.5" Y="1.5" Z="1.5"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
-	</group>
-	<group>
-		<translate X="3600"/>
-		<scale X="0.75" Y="0.75" Z="0.75"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
-	</group>
-	<group>
-		<translate X="8800"/>
-		<scale X="0.75" Y="0.75" Z="0.75"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
+		<group>
+			<translate X="10" />
+			<scale X="0.01" Y="0.01" Z="0.01"/>
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+		</group>
+		<group>
+			<translate X="20"/>
+			<scale X="0.025" Y="0.025" Z="0.025"/>
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+		</group>
+		<group>
+			<translate X="30"/>
+			<scale X="0.027" Y="0.027" Z="0.027"/>
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+			<group>
+				<translate Z="20" />
+				<scale X="0.3" Y="0.3" Z="0.3"/>
+				<models>
+					<model file="../assets/sphere.3d"/>
+				</models>
+			</group>
+		
+		</group>
+		<group>
+			<translate X="42.5"/>
+			<scale X="0.015" Y="0.015" Z="0.015"/>	
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+		</group>
+		<group>
+			<translate X="150"/>
+			<scale X="0.2" Y="0.2" Z="0.2"/>
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+		</group>
+		<group>
+			<translate X="280"/>
+			<scale X="0.15" Y="0.15" Z="0.15"/>
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+		</group>
+		<group>
+			<translate X="360"/>
+			<scale X="0.075" Y="0.075" Z="0.075"/>
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+		</group>
+		<group>
+			<translate X="880"/>
+			<scale X="0.075" Y="0.075" Z="0.075"/>
+			<models>
+				<model file="../assets/sphere.3d"/>
+			</models>
+		</group>
 	</group>
 </scene>
