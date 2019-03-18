@@ -29,7 +29,7 @@ static void sc_draw_group (struct scene * scene, struct group * group)
 			case GT_SCALE:
 				glScalef(gt.p.x, gt.p.y, gt.p.z);
 				break;
-			default: assert(!"po caralho");
+			default: assert(!"unreachable");
 		}
 	}
 
