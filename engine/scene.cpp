@@ -1,17 +1,17 @@
-#include "scene.h"
-
 #include "pugixml/pugixml.hpp"
 #include "../generator/generators.h"
-
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
 
 #include <string.h>
 #include <assert.h>
 
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
+#include <GL/glew.h>
+#include <GL/glut.h>
+#endif
+
+#include "scene.h"
 
 #define match(tag, func) \
 	if (strcmp(tag, trans.name()) == 0) func(trans, scene, group)
@@ -33,13 +33,12 @@ static void sc_draw_group (struct scene * scene, struct group * group)
 		}
 	}
 
-	glBegin(GL_TRIANGLES);
-	for (auto mname : group->models) {
-		std::vector<struct Point> model = scene->models[mname];
-		for (auto p : model)
-			glVertex3f(p.x, p.y, p.z);
+	for (std::string mname : group->models) {
+		struct model model = scene->models[mname];
+		glBindBuffer(GL_ARRAY_BUFFER, model.id);
+		glVertexPointer(3, GL_FLOAT, 0, NULL);
+		glDrawArrays(GL_TRIANGLES, 0, model.length);
 	}
-	glEnd();
 
 	for (auto subgroup : group->subgroups) {
 		glPushMatrix();
@@ -57,11 +56,27 @@ void sc_draw (struct scene * scene)
 	}
 }
 
-static void sc_load_model (const char * fname, std::vector<struct Point> * vec)
+static void sc_load_model (const char * fname, struct model * model)
 {
     FILE * inf = fopen(fname, "r");
-    gen_model_read(inf, vec);
+    std::vector<struct Point> vec;
+    gen_model_read(inf, &vec);
     fclose(inf);
+
+    float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));
+    unsigned i = 0;
+    for (struct Point p : vec) {
+        rafar[i++] = p.x;
+        rafar[i++] = p.y;
+        rafar[i++] = p.z;
+    }
+
+    model->length = vec.size();
+
+    glGenBuffers(1, &model->id);
+    glBindBuffer(GL_ARRAY_BUFFER, model->id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
+    free(rafar);
 }
 
 static void sc_load_models (pugi::xml_node node, struct scene * scene, struct group * group)
@@ -71,7 +86,7 @@ static void sc_load_models (pugi::xml_node node, struct scene * scene, struct gr
             const char * fname = trans.attribute("file").value();
 
             if (!scene->models.count(fname)) {
-                std::vector<struct Point> model;
+                struct model model;
 		sc_load_model(fname, &model);
 		scene->models[fname] = model;
 	    }

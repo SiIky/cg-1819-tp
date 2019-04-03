@@ -1,18 +1,20 @@
-#include <stdlib.h>
+#define _USE_MATH_DEFINES
+
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
+#include <GL/glew.h>
 #include <GL/glut.h>
 #endif
 
-#define _USE_MATH_DEFINES
+#include "scene.h"
 #include <math.h>
 #include <stdio.h>
 
 #include <vector>
+#include <iostream>
 
 #include "../generator/generators.h"
-#include "scene.h"
 
 int usage (const char * cmd)
 {
@@ -27,7 +29,7 @@ void changeSize (int w, int h)
     if(h == 0)
         h = 1;
 
-    // compute window's aspect ratio 
+    // compute window's aspect ratio
     float ratio = w * 1.0 / h;
 
     // Set the projection matrix as current
@@ -91,6 +93,7 @@ void renderScene (void)
     }
     glEnd();
 
+    glColor3ub(100, 100, 100);
     sc_draw(&scene);
 
     // End of frame
@@ -129,18 +132,16 @@ int main (int argc, char **argv)
     if (argc < 2)
         return usage(*argv);
 
-    if (!sc_load_file(argv[1], &scene))
-        return !0;
-
     // init GLUT and the window
     glutInit(&argc, argv);
+    glEnableClientState(GL_VERTEX_ARRAY);
     glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA);
     glutInitWindowPosition(100,100);
     glutInitWindowSize(800,800);
     glutCreateWindow("CG@DI-UM");
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    // Required callback registry 
+    // Required callback registry
     glutDisplayFunc(renderScene);
     glutReshapeFunc(changeSize);
 
@@ -150,6 +151,14 @@ int main (int argc, char **argv)
     // OpenGL settings
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+
+#ifndef __APPLE__
+        // init GLEW
+        glewInit();
+#endif
+
+    if (!sc_load_file(argv[1], &scene))
+        return !0;
 
     // enter GLUT's main cycle
     glutMainLoop();

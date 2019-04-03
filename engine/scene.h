@@ -27,9 +27,14 @@ struct group {
 	std::vector<struct group*> subgroups;
 };
 
+struct model {
+	GLuint id;
+	size_t length;
+};
+
 struct scene {
 	std::vector<struct group*> groups;
-	std::map<std::string, std::vector<struct Point>> models;
+	std::map<std::string, struct model> models;
 };
 
 bool sc_load_file (const char * path, struct scene * scene);
