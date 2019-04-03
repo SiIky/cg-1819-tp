@@ -134,7 +134,6 @@ int main (int argc, char **argv)
 
     // init GLUT and the window
     glutInit(&argc, argv);
-    glEnableClientState(GL_VERTEX_ARRAY);
     glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA);
     glutInitWindowPosition(100,100);
     glutInitWindowSize(800,800);
@@ -151,6 +150,7 @@ int main (int argc, char **argv)
     // OpenGL settings
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glEnableClientState(GL_VERTEX_ARRAY);
 
 #ifndef __APPLE__
         // init GLEW
