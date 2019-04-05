@@ -59,6 +59,8 @@ static float r = 10;
 static float a = 315;
 static float b = 45;
 
+static int timebase = 0;
+static int frame = 0;
 static struct scene scene;
 
 void renderScene (void)
@@ -75,7 +77,7 @@ void renderScene (void)
             rc * sin(deg2rad(a)), r * sin(deg2rad(b)), rc * cos(deg2rad(a)),
             L.x, L.y, L.z,
             Up.x, Up.y, Up.z
-         );
+            );
 
     glBegin(GL_LINES);
     {
@@ -93,38 +95,41 @@ void renderScene (void)
     }
     glEnd();
 
+    unsigned elapsed_program_start = glutGet(GLUT_ELAPSED_TIME);
+    unsigned elapsed_last_frame = elapsed_program_start - timebase;
+
     glColor3ub(100, 100, 100);
-    sc_draw(&scene);
+    sc_draw(&scene, elapsed_program_start);
 
     // End of frame
     glutSwapBuffers();
+
+    frame++;
+    if (elapsed_last_frame > 1000) {
+        float fps = frame*1000.0/elapsed_last_frame;
+        char s[64];
+        timebase = elapsed_program_start;
+        frame = 0;
+        sprintf(s, "FPS: %f6.2", fps);
+        glutSetWindowTitle(s);
+    }
 }
 
 void processKeys (unsigned char c, int xx, int yy)
 {
     switch (c) {
-        case 'w': {
-            b += 1;
-        } break;
-        case 's': {
-            b -= 1;
-        } break;
-        case 'a': {
-            a -= 1;
-        } break;
-        case 'd': {
-            a += 1;
-        } break;
+        case 'w': b += 1; break;
+        case 'a': a -= 1; break;
+        case 's': b -= 1; break;
+        case 'd': a += 1; break;
 
-        case 'k': {
-            r -= 1;
-        } break;
-        case 'j': {
-            r += 1;
-        } break;
+        case 'k': r -= 1; break;
+        case 'j': r += 1; break;
+
+        case '#': glPolygonMode(GL_FRONT, GL_FILL);  break;
+        case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
+        case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
     }
-
-    glutPostRedisplay();
 }
 
 int main (int argc, char **argv)
@@ -138,10 +143,11 @@ int main (int argc, char **argv)
     glutInitWindowPosition(100,100);
     glutInitWindowSize(800,800);
     glutCreateWindow("CG@DI-UM");
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT, GL_FILL);
 
     // Required callback registry
     glutDisplayFunc(renderScene);
+    glutIdleFunc(renderScene);
     glutReshapeFunc(changeSize);
 
     // Callback registration for keyboard processing
@@ -153,8 +159,8 @@ int main (int argc, char **argv)
     glEnableClientState(GL_VERTEX_ARRAY);
 
 #ifndef __APPLE__
-        // init GLEW
-        glewInit();
+    // init GLEW
+    glewInit();
 #endif
 
     if (!sc_load_file(argv[1], &scene))

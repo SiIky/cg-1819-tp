@@ -14,46 +14,76 @@
 #include "scene.h"
 
 #define match(tag, func) \
-	if (strcmp(tag, trans.name()) == 0) func(trans, scene, group)
+    if (strcmp(tag, trans.name()) == 0) func(trans, scene, group)
 
-static void sc_draw_group (struct scene * scene, struct group * group)
+#define UNIMPLEMENTED() assert(!"unimplemented")
+#define UNREACHABLE()   assert(!"unreachable")
+
+static void sc_draw_rotate (const struct gt * gt)
 {
-	for (struct gt gt : group->gt) {
-		switch (gt.type) {
-			case GT_TRANSLATE:
-				glTranslatef(gt.p.x, gt.p.y, gt.p.z);
-				break;
-			case GT_ROTATE:
-				glRotatef(gt.angle, gt.p.x, gt.p.y, gt.p.z);
-				break;
-			case GT_SCALE:
-				glScalef(gt.p.x, gt.p.y, gt.p.z);
-				break;
-			default: assert(!"unreachable");
-		}
-	}
-
-	for (std::string mname : group->models) {
-		struct model model = scene->models[mname];
-		glBindBuffer(GL_ARRAY_BUFFER, model.id);
-		glVertexPointer(3, GL_FLOAT, 0, NULL);
-		glDrawArrays(GL_TRIANGLES, 0, model.length);
-	}
-
-	for (auto subgroup : group->subgroups) {
-		glPushMatrix();
-		sc_draw_group(scene, subgroup);
-		glPopMatrix();
-	}
+    assert(gt->type == GT_ROTATE);
+    glRotatef(gt->angle, gt->p.x, gt->p.y, gt->p.z);
 }
 
-void sc_draw (struct scene * scene)
+static void sc_draw_rotate_anim (const struct gt * gt, unsigned int elapsed)
 {
-	for (struct group * group : scene->groups) {
-		glPushMatrix();
-		sc_draw_group(scene, group);
-		glPopMatrix();
-	}
+    assert(gt->type == GT_ROTATE_ANIM);
+    float angle = (360.0 * elapsed) / gt->time;
+    glRotatef(angle, gt->p.x, gt->p.y, gt->p.z);
+}
+
+static void sc_draw_scale (const struct gt * gt)
+{
+    assert(gt->type == GT_SCALE);
+    glScalef(gt->p.x, gt->p.y, gt->p.z);
+}
+
+static void sc_draw_translate (const struct gt * gt)
+{
+    assert(gt->type == GT_TRANSLATE);
+    glTranslatef(gt->p.x, gt->p.y, gt->p.z);
+}
+
+static void sc_draw_translate_anim (const struct gt * gt, unsigned int elapsed)
+{
+    assert(gt->type == GT_TRANSLATE_ANIM);
+    UNIMPLEMENTED();
+}
+
+static void sc_draw_group (struct scene * scene, struct group * group, unsigned int elapsed)
+{
+    for (struct gt gt : group->gt) {
+        switch (gt.type) {
+            case GT_ROTATE:         sc_draw_rotate(&gt);                  break;
+            case GT_ROTATE_ANIM:    sc_draw_rotate_anim(&gt, elapsed);    break;
+            case GT_SCALE:          sc_draw_scale(&gt);                   break;
+            case GT_TRANSLATE:      sc_draw_translate(&gt);               break;
+            case GT_TRANSLATE_ANIM: sc_draw_translate_anim(&gt, elapsed); break;
+            default: UNREACHABLE();
+        }
+    }
+
+    for (std::string mname : group->models) {
+        struct model model = scene->models[mname];
+        glBindBuffer(GL_ARRAY_BUFFER, model.id);
+        glVertexPointer(3, GL_FLOAT, 0, NULL);
+        glDrawArrays(GL_TRIANGLES, 0, model.length);
+    }
+
+    for (auto subgroup : group->subgroups) {
+        glPushMatrix();
+        sc_draw_group(scene, subgroup, elapsed);
+        glPopMatrix();
+    }
+}
+
+void sc_draw (struct scene * scene, unsigned int elapsed)
+{
+    for (struct group * group : scene->groups) {
+        glPushMatrix();
+        sc_draw_group(scene, group, elapsed);
+        glPopMatrix();
+    }
 }
 
 static void sc_load_model (const char * fname, struct model * model)
@@ -82,17 +112,17 @@ static void sc_load_model (const char * fname, struct model * model)
 static void sc_load_models (pugi::xml_node node, struct scene * scene, struct group * group)
 {
     for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling()) {
-	if (strcmp("model", trans.name()) == 0) {
-            const char * fname = trans.attribute("file").value();
+        if (strcmp("model", trans.name()) == 0) {
+            const char * fname = trans.attribute("FILE").value();
 
             if (!scene->models.count(fname)) {
                 struct model model;
-		sc_load_model(fname, &model);
-		scene->models[fname] = model;
-	    }
+                sc_load_model(fname, &model);
+                scene->models[fname] = model;
+            }
 
             group->models.push_back(fname);
-	}
+        }
     }
 }
 
@@ -100,12 +130,25 @@ static void sc_load_models (pugi::xml_node node, struct scene * scene, struct gr
 
 static void sc_load_rotate (pugi::xml_node node, struct scene * scene, struct group * group)
 {
+    bool is_static = node.attribute("ANGLE");
+    bool is_anim   = node.attribute("TIME");
+
+    assert(is_static || is_anim);
+
     struct gt rotate;
-    rotate.type = GT_ROTATE;
-    rotate.angle = maybe(node.attribute("ANGLE"), 0);
+
+    if (is_static) {
+        rotate.angle = node.attribute("ANGLE").as_float();
+        rotate.type = GT_ROTATE;
+    } else {
+        rotate.time = node.attribute("TIME").as_int() * 1000;
+        rotate.type = GT_ROTATE_ANIM;
+    }
+
     rotate.p.x = maybe(node.attribute("X"), 0);
     rotate.p.y = maybe(node.attribute("Y"), 0);
     rotate.p.z = maybe(node.attribute("Z"), 0);
+
     group->gt.push_back(rotate);
 }
 
@@ -121,11 +164,23 @@ static void sc_load_scale (pugi::xml_node node, struct scene * scene, struct gro
 
 static void sc_load_translate (pugi::xml_node node, struct scene * scene, struct group * group)
 {
+    bool is_anim = node.attribute("TIME");
+
     struct gt translate;
-    translate.type = GT_TRANSLATE;
-    translate.p.x = maybe(node.attribute("X"), 0);
-    translate.p.y = maybe(node.attribute("Y"), 0);
-    translate.p.z = maybe(node.attribute("Z"), 0);
+
+    translate.type = (is_anim) ?
+        GT_TRANSLATE_ANIM:
+        GT_TRANSLATE;
+
+    if (is_anim) {
+        UNIMPLEMENTED();
+        translate.time = node.attribute("TIME").as_int() * 1000; /* ms */
+    } else {
+        translate.p.x = maybe(node.attribute("X"), 0);
+        translate.p.y = maybe(node.attribute("Y"), 0);
+        translate.p.z = maybe(node.attribute("Z"), 0);
+    }
+
     group->gt.push_back(translate);
 }
 
@@ -153,11 +208,11 @@ bool sc_load_file (const char * path, struct scene * scene)
     pugi::xml_node models = doc.child("scene");
 
     for (pugi::xml_node trans = models.first_child(); trans; trans = trans.next_sibling()) {
-	if (strcmp("group", trans.name()) == 0) {
+        if (strcmp("group", trans.name()) == 0) {
             struct group * group = (struct group*) calloc(1, sizeof(struct group));
             sc_load_group(trans, scene, group);
             scene->groups.push_back(group);
-	}
+        }
     }
 
     return true;

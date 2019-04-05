@@ -4,20 +4,21 @@
 		<scale X="2"/>
 		<rotate ANGLE="45" X="2"/>
 		<models>
-			<model file="../assets/box.3d"/>
-			<model file="../assets/cone.3d"/>
-			<model file="../assets/cylinder.3d"/>
-			<model file="../assets/sphere.3d"/>
+			<model FILE="../assets/box.3d"/>
+			<model FILE="../assets/cone.3d"/>
+			<model FILE="../assets/cylinder.3d"/>
+			<model FILE="../assets/sphere.3d"/>
 		</models>
 		<group>
 			<translate X="3"/>
 			<scale X="2"/>
 			<rotate ANGLE="45" X="2"/>
+			<rotate TIME="5" X="2"/>
 			<models>
-				<model file="../assets/box.3d"/>
-				<model file="../assets/cone.3d"/>
-				<model file="../assets/cylinder.3d"/>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/box.3d"/>
+				<model FILE="../assets/cone.3d"/>
+				<model FILE="../assets/cylinder.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
 	</group>
