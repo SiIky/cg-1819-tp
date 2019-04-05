@@ -18,7 +18,7 @@
  * @param A - Point.
  * @returns Returns the point with the X, Y and Z axis values scaled by s.
  */
-static inline struct Point operator* (float s, struct Point A) 
+static inline struct Point operator* (float s, struct Point A)
 {
     return Point(A.x * s, A.y * s, A.z * s);
 }
@@ -59,7 +59,7 @@ static inline float norm (struct Point v)
  * @brief Calculates the distance between two points.
  * @param A - First point.
  * @param B - Second point.
- * @returns Returns the distance between the two given points. 
+ * @returns Returns the distance between the two given points.
  */
 static inline float dist (struct Point A, struct Point B)
 {
@@ -77,7 +77,7 @@ static inline struct Point normalize (struct Point A)
     return 1 / norm(A) * A;
 }
 
-// Already documented in generators.h // 
+// Already documented in generators.h //
 
 static inline void gen_point_write_intern (FILE * outf, struct Point p)
 {
@@ -507,7 +507,7 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
     for (unsigned i = 0; i <= sph.stacks; i++) {
 	/* Stacks range between 0 and 180 degrees (pi).
          * lat represents the current stack step (limited by the total number of stacks)
-         */ 
+         */
         double lat = ((double) i) / ((double) sph.stacks) * M_PI;
 
         for (unsigned j = 0; j <= sph.slices; j++) {

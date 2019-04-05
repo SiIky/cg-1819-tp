@@ -11,6 +11,9 @@
 #include <GL/glut.h>
 #endif
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "scene.h"
 
 #define match(tag, func) \
@@ -18,6 +21,8 @@
 
 #define UNIMPLEMENTED() assert(!"unimplemented")
 #define UNREACHABLE()   assert(!"unreachable")
+
+static void get_global_catmull_rom_point (float gt, struct Point * pos, struct Point * deriv, const std::vector<struct Point> cp);
 
 static void sc_draw_rotate (const struct gt * gt)
 {
@@ -44,10 +49,108 @@ static void sc_draw_translate (const struct gt * gt)
     glTranslatef(gt->p.x, gt->p.y, gt->p.z);
 }
 
-static void sc_draw_translate_anim (const struct gt * gt, unsigned int elapsed)
+static void sc_draw_translate_anim (struct gt * gt, unsigned int elapsed)
 {
     assert(gt->type == GT_TRANSLATE_ANIM);
-    UNIMPLEMENTED();
+    float t = (float) elapsed / (float) gt->time;
+
+    struct Point pos;
+    struct Point deriv;
+
+    get_global_catmull_rom_point(t, &pos, &deriv, gt->control_points);
+    glTranslatef(pos.x,pos.y,pos.z);
+}
+
+static void mult_matrix_vector (float *m, float *v, float *res)
+{
+    for (int j = 0; j < 4; j++) {
+        res[j] = 0;
+        for (int k = 0; k < 4; k++) {
+            res[j] += v[k] * m[j * 4 + k];
+        }
+    }
+}
+
+static void get_catmull_rom_point (float t, struct Point p0, struct Point p1, struct Point p2, struct Point p3, struct Point * pos, struct Point * deriv)
+{
+    // catmull-rom matrix
+    float m[16] = {
+        -0.5f, 1.5f,  -1.5f, 0.5f,
+        1.0f,  -2.5f, 2.0f,  -0.5f,
+        -0.5f, 0.0f,  0.5f,  0.0f,
+        0.0f,  1.0f,  0.0f,  0.0f,
+    };
+
+#define cenas(f) \
+    do { \
+        float A[4];                                   \
+        float P[4] = { p0.f, p1.f, p2.f, p3.f };      \
+        mult_matrix_vector(m, P, A);                  \
+        pos->f = t*t*t*A[0] + t*t*A[1]+t*A[2] + A[3]; \
+        deriv->f = 3*t*t*A[0] + 2*t*A[1]+A[2];        \
+    } while(0)
+
+    cenas(x);
+    cenas(y);
+    cenas(z);
+}
+
+static void get_global_catmull_rom_point (float gt, struct Point * pos, struct Point * deriv, const std::vector<struct Point> cp)
+{
+    unsigned POINT_COUNT = cp.size();
+    float t = gt * POINT_COUNT; // this is the real global t
+    int index = floor(t); // which segment
+    t -= index; // where within the segment
+
+    // indices store the points
+    int i[4];
+    i[0] = (index + POINT_COUNT - 1) % POINT_COUNT;
+    i[1] = (i[0] + 1) % POINT_COUNT;
+    i[2] = (i[1] + 1) % POINT_COUNT;
+    i[3] = (i[2] + 1) % POINT_COUNT;
+
+    get_catmull_rom_point(t, cp[i[0]], cp[i[1]], cp[i[2]], cp[i[3]], pos, deriv);
+}
+
+static struct Point cross (struct Point a, struct Point b)
+{
+    return Point(
+            a.y*b.z - a.z*b.y,
+            a.z*b.x - a.x*b.z,
+            a.x*b.y - a.y*b.x
+            );
+}
+
+static float length (struct Point v)
+{
+    return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
+static struct Point normalize (struct Point p)
+{
+    float l = length(p);
+    return Point(p.x / l, p.y / l, p.z / l);
+}
+
+static void buildRotMatrix (struct Point x, struct Point y, struct Point z, float m[16])
+{
+    m[0] = x.x; m[1] = x.y; m[2] = x.z; m[3] = 0;
+    m[4] = y.x; m[5] = y.y; m[6] = y.z; m[7] = 0;
+    m[8] = z.x; m[9] = z.y; m[10] = z.z; m[11] = 0;
+    m[12] = 0; m[13] = 0; m[14] = 0; m[15] = 1;
+}
+
+static void sc_draw_cm_curve (const struct gt * gt)
+{
+    glBegin(GL_LINE_LOOP); {
+        for (float i = 0; i < 1; i += 0.01) {
+            struct Point pos;
+            struct Point deriv;
+
+            get_global_catmull_rom_point(i, &pos, &deriv, gt->control_points);
+            glVertex3f(pos.x, pos.y, pos.z);
+        }
+    } glEnd();
 }
 
 static void sc_draw_group (struct scene * scene, struct group * group, unsigned int elapsed)
@@ -58,7 +161,10 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
             case GT_ROTATE_ANIM:    sc_draw_rotate_anim(&gt, elapsed);    break;
             case GT_SCALE:          sc_draw_scale(&gt);                   break;
             case GT_TRANSLATE:      sc_draw_translate(&gt);               break;
-            case GT_TRANSLATE_ANIM: sc_draw_translate_anim(&gt, elapsed); break;
+            case GT_TRANSLATE_ANIM:
+                sc_draw_cm_curve(&gt);
+                sc_draw_translate_anim(&gt, elapsed);
+                break;
             default: UNREACHABLE();
         }
     }
@@ -162,6 +268,15 @@ static void sc_load_scale (pugi::xml_node node, struct scene * scene, struct gro
     group->gt.push_back(scale);
 }
 
+static struct Point sc_load_translate_control_point (pugi::xml_node node)
+{
+    return Point(
+            maybe(node.attribute("X"), 0),
+            maybe(node.attribute("Y"), 0),
+            maybe(node.attribute("Z"), 0)
+            );
+}
+
 static void sc_load_translate (pugi::xml_node node, struct scene * scene, struct group * group)
 {
     bool is_anim = node.attribute("TIME");
@@ -173,8 +288,11 @@ static void sc_load_translate (pugi::xml_node node, struct scene * scene, struct
         GT_TRANSLATE;
 
     if (is_anim) {
-        UNIMPLEMENTED();
         translate.time = node.attribute("TIME").as_int() * 1000; /* ms */
+        for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling())
+            if (strcmp("point", trans.name()) == 0)
+                translate.control_points.push_back(sc_load_translate_control_point(trans));
+        assert(translate.control_points.size() >= 4);
     } else {
         translate.p.x = maybe(node.attribute("X"), 0);
         translate.p.y = maybe(node.attribute("Y"), 0);

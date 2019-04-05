@@ -1,71 +1,84 @@
 <scene>
 	<group>
 		<scale X="10" Y="10" Z="10"/>
-		<models>
-			<model file="../assets/sphere.3d"/>
-		</models>
+                <!-- Sol -->
+                <group>
+                    <rotate TIME="20" Y="1"/>
+                    <models>
+                            <model FILE="../assets/sphere.3d"/>
+                    </models>
+                </group>
+                <!-- Mercurio -->
 		<group>
 			<translate X="10" />
 			<scale X="0.01" Y="0.01" Z="0.01"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
+                <!-- Venus -->
 		<group>
 			<translate X="20"/>
 			<scale X="0.025" Y="0.025" Z="0.025"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
+                <!-- Terra -->
 		<group>
-			<translate X="30"/>
+			<translate TIME="60">
+                            <point X="30"/>
+                            <point Z="-30"/>
+                            <point X="-30"/>
+                            <point Z="30"/>
+                        </translate>
+                        <rotate TIME="15" Y="1"/>
 			<scale X="0.027" Y="0.027" Z="0.027"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 			<group>
 				<translate Z="20" />
 				<scale X="0.3" Y="0.3" Z="0.3"/>
 				<models>
-					<model file="../assets/sphere.3d"/>
+					<model FILE="../assets/sphere.3d"/>
 				</models>
 			</group>
-		
+
 		</group>
 		<group>
 			<translate X="42.5"/>
-			<scale X="0.015" Y="0.015" Z="0.015"/>	
+			<scale X="0.015" Y="0.015" Z="0.015"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
 		<group>
 			<translate X="150"/>
 			<scale X="0.2" Y="0.2" Z="0.2"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
 		<group>
 			<translate X="280"/>
 			<scale X="0.15" Y="0.15" Z="0.15"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
 		<group>
 			<translate X="360"/>
 			<scale X="0.075" Y="0.075" Z="0.075"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
 		<group>
 			<translate X="880"/>
 			<scale X="0.075" Y="0.075" Z="0.075"/>
 			<models>
-				<model file="../assets/sphere.3d"/>
+				<model FILE="../assets/sphere.3d"/>
 			</models>
 		</group>
 	</group>

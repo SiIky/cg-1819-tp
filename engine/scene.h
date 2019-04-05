@@ -37,6 +37,11 @@ struct gt {
     unsigned time;
 
     /*
+     * GT_TRANSLATE_ANIM: Catmull-Rom Control Points
+     */
+    std::vector<struct Point> control_points;
+
+    /*
      * what kind of Geometric Transformation?
      */
     enum type type;

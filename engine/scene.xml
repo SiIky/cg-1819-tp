@@ -1,25 +1,15 @@
 <scene>
 	<group>
-		<translate X="3"/>
-		<scale X="2"/>
-		<rotate ANGLE="45" X="2"/>
+		<translate TIME="3">
+<point X="-2.351141" Y="0.000000" Z="-3.236068"/>
+<point X="-3.804226" Y="0.000000" Z="1.236068"/>
+<point X="0.000000" Y="0.000000" Z="4.000000"/>
+<point X="3.804226" Y="0.000000" Z="1.236068"/>
+<point X="2.351141" Y="0.000000" Z="-3.236068"/>
+		</translate>
 		<models>
 			<model FILE="../assets/box.3d"/>
 			<model FILE="../assets/cone.3d"/>
-			<model FILE="../assets/cylinder.3d"/>
-			<model FILE="../assets/sphere.3d"/>
 		</models>
-		<group>
-			<translate X="3"/>
-			<scale X="2"/>
-			<rotate ANGLE="45" X="2"/>
-			<rotate TIME="5" X="2"/>
-			<models>
-				<model FILE="../assets/box.3d"/>
-				<model FILE="../assets/cone.3d"/>
-				<model FILE="../assets/cylinder.3d"/>
-				<model FILE="../assets/sphere.3d"/>
-			</models>
-		</group>
 	</group>
 </scene>
