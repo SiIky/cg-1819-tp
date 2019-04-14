@@ -8,6 +8,10 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <assert.h>
+
+#define UNIMPLEMENTED() assert(!"unimplemented")
+
 /*
  * Internal Functions
  */
@@ -545,6 +549,58 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
         gen_triangle_write_intern(outf, Triangle(P1, P2, P3));
         gen_triangle_write_intern(outf, Triangle(P2, P1, P4));
     }
+}
+
+static void gen_bezier_patch_read (FILE * inf, std::vector<struct Point> * cps, std::vector<std::vector<unsigned>> * patches)
+{
+    /* # of patches to read */
+    unsigned npatches = 0;
+    fscanf(inf, "%u\n", &npatches);
+    patches->reserve(npatches);
+
+    /* read the patches */
+    for (unsigned p = 0; p < npatches; p++) {
+        std::vector<unsigned> patch;
+        patch.reserve(16);
+
+        unsigned idx = 0;
+
+        for (unsigned i = 0; i < 15; i++) {
+            fscanf(inf, "%u, ", &idx);
+            patch.push_back(idx);
+        }
+
+        fscanf(inf, "%u\n", &idx);
+        patch.push_back(idx);
+
+        patches->push_back(patch);
+    }
+
+    /* # of control points */
+    unsigned ncps = 0;
+    fscanf(inf, "%u\n", &ncps);
+    cps->reserve(ncps);
+
+    /* read the control points */
+    for (unsigned cp = 0; cp < ncps; cp++) {
+        struct Point pt = Point(0, 0, 0);
+        fscanf(inf, "%f, %f, %f\n", &pt.x, &pt.y, &pt.z);
+        cps->push_back(pt);
+    }
+}
+
+static void gen_bezier_patch_write_intern (std::vector<struct Point> cps, std::vector<std::vector<unsigned>> patches)
+{
+    UNIMPLEMENTED();
+}
+
+void gen_bezier_patch_write (FILE * outf, FILE * inf)
+{
+    std::vector<struct Point> cps;
+    std::vector<std::vector<unsigned>> patches;
+    gen_bezier_patch_read(inf, &cps, &patches);
+    fprintf(outf, "bezier\n");
+    gen_bezier_patch_write_intern(cps, patches);
 }
 
 /**

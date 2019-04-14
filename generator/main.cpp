@@ -63,6 +63,12 @@ int usage_sphere (const char ** argv)
     return !0;
 }
 
+int usage_bezier (const char ** argv)
+{
+    printf("\t%s bezier OUTFILE INFILE\n", *argv);
+    return !0;
+}
+
 /** 
  * @brief Displays the user information on how to run the programme.
  * @param argv - Programme name (function will only be called if argv < 2).
@@ -80,6 +86,7 @@ int usage (const char ** argv)
     usage_cone(argv);
     usage_cylinder(argv);
     usage_sphere(argv);
+    usage_bezier(argv);
     return !0;
 }
 
@@ -201,6 +208,17 @@ int main_sphere (FILE * outf, int argc, const char ** argv)
     return 0;
 }
 
+int main_bezier (FILE * outf, int argc, const char ** argv)
+{
+    if (argc < 4)
+        return usage_bezier(argv);
+
+    FILE * inf = fopen(argv[3], "r");
+    gen_bezier_patch_write(outf, inf);
+
+    return 0;
+}
+
 int main (int argc, const char ** argv)
 {
     if (argc < 2)
@@ -220,5 +238,6 @@ int main (int argc, const char ** argv)
         cmd("cone", main_cone):
         cmd("cylinder", main_cylinder):
         cmd("sphere", main_sphere):
+        cmd("bezier", main_bezier):
         usage(argv);
 }
