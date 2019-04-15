@@ -1,4 +1,6 @@
 #define _USE_MATH_DEFINES
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -9,7 +11,8 @@
 
 #include "scene.h"
 #include <math.h>
-#include <stdio.h>
+
+
 
 #include <vector>
 #include <iostream>
@@ -31,7 +34,7 @@ void changeSize (int w, int h)
 
     // compute window's aspect ratio
     float ratio = w * 1.0 / h;
-
+	gluPerspective(45.0f, ratio, 1.0f, 100000000000000000.0f);
     // Set the projection matrix as current
     glMatrixMode(GL_PROJECTION);
     // Load Identity Matrix
@@ -55,7 +58,7 @@ float deg2rad (float deg)
 static const struct Point L  = Point(0, 0, 0);
 static const struct Point Up = Point(0, 1, 0);
 
-static float r = 10;
+static float r = 250;
 static float a = 315;
 static float b = 45;
 
