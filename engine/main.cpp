@@ -66,6 +66,8 @@ static int timebase = 0;
 static int frame = 0;
 static struct scene scene;
 
+static bool draw_curves = false;
+
 void renderScene (void)
 {
     // clear buffers
@@ -102,7 +104,7 @@ void renderScene (void)
     unsigned elapsed_last_frame = elapsed_program_start - timebase;
 
     glColor3ub(100, 100, 100);
-    sc_draw(&scene, elapsed_program_start);
+    sc_draw(&scene, elapsed_program_start, draw_curves);
 
     // End of frame
     glutSwapBuffers();
@@ -132,6 +134,8 @@ void processKeys (unsigned char c, int xx, int yy)
         case '#': glPolygonMode(GL_FRONT, GL_FILL);  break;
         case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
+
+        case '~': draw_curves = !draw_curves;
     }
 }
 

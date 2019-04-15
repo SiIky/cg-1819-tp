@@ -71,6 +71,6 @@ struct scene {
 };
 
 bool sc_load_file (const char * path, struct scene * scene);
-void sc_draw      (struct scene * scene, unsigned int elapsed);
+void sc_draw      (struct scene * scene, unsigned int elapsed, bool draw_curves);
 
 #endif /* _SCENE_H */

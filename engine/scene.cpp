@@ -153,7 +153,7 @@ static void sc_draw_cm_curve (const struct gt * gt)
     } glEnd();
 }
 
-static void sc_draw_group (struct scene * scene, struct group * group, unsigned int elapsed)
+static void sc_draw_group (struct scene * scene, struct group * group, unsigned int elapsed, bool draw_curves)
 {
     for (struct gt gt : group->gt) {
         switch (gt.type) {
@@ -162,7 +162,7 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
             case GT_SCALE:          sc_draw_scale(&gt);                   break;
             case GT_TRANSLATE:      sc_draw_translate(&gt);               break;
             case GT_TRANSLATE_ANIM:
-                sc_draw_cm_curve(&gt);
+                if (draw_curves) sc_draw_cm_curve(&gt);
                 sc_draw_translate_anim(&gt, elapsed);
                 break;
             default: UNREACHABLE();
@@ -178,16 +178,16 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
 
     for (auto subgroup : group->subgroups) {
         glPushMatrix();
-        sc_draw_group(scene, subgroup, elapsed);
+        sc_draw_group(scene, subgroup, elapsed, draw_curves);
         glPopMatrix();
     }
 }
 
-void sc_draw (struct scene * scene, unsigned int elapsed)
+void sc_draw (struct scene * scene, unsigned int elapsed, bool draw_curves)
 {
     for (struct group * group : scene->groups) {
         glPushMatrix();
-        sc_draw_group(scene, group, elapsed);
+        sc_draw_group(scene, group, elapsed, draw_curves);
         glPopMatrix();
     }
 }
