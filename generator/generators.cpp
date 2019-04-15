@@ -81,6 +81,43 @@ static inline struct Point normalize (struct Point A)
     return 1 / norm(A) * A;
 }
 
+static struct Point mat_dot_product_MP (const float M[4][4], const struct Point P[4][4], unsigned i, unsigned j)
+{
+    struct Point ret = Point(0, 0, 0);
+    for (unsigned I = 0; I < 4; I++)
+        ret = ret + M[i][I] * P[I][j];
+    return ret;
+}
+
+static struct Point mat_dot_product_PM (const struct Point P[4][4], const float M[4][4], unsigned i, unsigned j)
+{
+    struct Point ret = Point(0, 0, 0);
+    for (unsigned I = 0; I < 4; I++)
+        ret = ret + M[I][j] * P[i][I];
+    return ret;
+}
+
+static void mult_MP (const float M[4][4], const struct Point P[4][4], struct Point r[4][4])
+{
+    for (unsigned i = 0; i < 4; i++)
+        for (unsigned j = 0; j < 4; j++)
+            r[i][j] = mat_dot_product_MP(M, P, i, j);
+}
+
+static void mult_PM (const struct Point P[4][4], const float M[4][4], struct Point r[4][4])
+{
+    for (unsigned i = 0; i < 4; i++)
+        for (unsigned j = 0; j < 4; j++)
+            r[i][j] = mat_dot_product_PM(P, M, i, j);
+}
+
+static void mult_MPM (const float M[4][4], const struct Point P[4][4], struct Point r[4][4])
+{
+    struct Point tmp[4][4];
+    mult_MP(M, P, tmp);
+    mult_PM(tmp, M, r);
+}
+
 // Already documented in generators.h //
 
 static inline void gen_point_write_intern (FILE * outf, struct Point p)
@@ -589,18 +626,74 @@ static void gen_bezier_patch_read (FILE * inf, std::vector<struct Point> * cps, 
     }
 }
 
-static void gen_bezier_patch_write_intern (std::vector<struct Point> cps, std::vector<std::vector<unsigned>> patches)
+struct Point gen_bezier_get_single_point (const struct Point MPM[4][4], float u, float v)
 {
-    UNIMPLEMENTED();
+    struct Point tmp[4];
+
+    for (unsigned j = 0; j < 4; j++)
+        tmp[j] = (u * u * u * MPM[j][0])
+            + (u * u * MPM[j][1])
+            + (u * MPM[j][2])
+            + MPM[j][3];
+
+    return (v * v * v * tmp[0])
+        + (v * v * tmp[1])
+        + (v * tmp[2])
+        + tmp[3];
 }
 
-void gen_bezier_patch_write (FILE * outf, FILE * inf)
+static void gen_bezier_patch_single (FILE * outf, const float M[4][4], std::vector<struct Point> cps, std::vector<unsigned> idxs, unsigned tessellation)
+{
+    const struct Point P[4][4] = {
+        { cps[idxs[0]],  cps[idxs[1]],  cps[idxs[2]],  cps[idxs[3]], },
+        { cps[idxs[4]],  cps[idxs[5]],  cps[idxs[6]],  cps[idxs[7]], },
+        { cps[idxs[8]],  cps[idxs[9]],  cps[idxs[10]], cps[idxs[11]], },
+        { cps[idxs[12]], cps[idxs[13]], cps[idxs[14]], cps[idxs[15]], },
+    };
+
+    struct Point p = Point(0, 0, 0);
+    struct Point MPM[4][4];
+    mult_MPM(M, P, MPM);
+
+    for (unsigned i = 1; i <= 4 * tessellation; i++) {
+        float u_ = ((float) i - 1) / (4.0 * tessellation);
+        float u = ((float) i) / (4.0 * tessellation);
+
+        for (unsigned j = 1; j <= 4 * tessellation; j++) {
+            float v_ = ((float) j - 1) / (4.0 * tessellation);
+            float v = ((float) j) / (4.0 * tessellation);
+
+            struct Point P1 = gen_bezier_get_single_point(MPM, u, v_);
+            struct Point P2 = gen_bezier_get_single_point(MPM, u, v);
+            struct Point P3 = gen_bezier_get_single_point(MPM, u_, v_);
+            struct Point P4 = gen_bezier_get_single_point(MPM, u_, v);
+
+            struct Rectangle R = Rectangle(P1, P2, P3, P4);
+            gen_rectangle_write_nodivs_intern(outf, R);
+        }
+    }
+}
+
+static void gen_bezier_patch_write_intern (FILE * outf, std::vector<struct Point> cps, std::vector<std::vector<unsigned>> patches, unsigned tessellation)
+{
+    const float M[4][4] = {
+        { -1,  3, -3, 1, },
+        {  3, -6,  3, 0, },
+        { -3,  3,  0, 0, },
+        {  1,  0,  0, 0, },
+    };
+
+    for (std::vector<unsigned> patch : patches)
+        gen_bezier_patch_single(outf, M, cps, patch, tessellation);
+}
+
+void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation)
 {
     std::vector<struct Point> cps;
     std::vector<std::vector<unsigned>> patches;
     gen_bezier_patch_read(inf, &cps, &patches);
     fprintf(outf, "bezier\n");
-    gen_bezier_patch_write_intern(cps, patches);
+    gen_bezier_patch_write_intern(outf, cps, patches, tessellation);
 }
 
 /**

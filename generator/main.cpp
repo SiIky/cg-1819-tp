@@ -65,7 +65,7 @@ int usage_sphere (const char ** argv)
 
 int usage_bezier (const char ** argv)
 {
-    printf("\t%s bezier OUTFILE INFILE\n", *argv);
+    printf("\t%s bezier OUTFILE INFILE TESSELLATION\n", *argv);
     return !0;
 }
 
@@ -210,11 +210,13 @@ int main_sphere (FILE * outf, int argc, const char ** argv)
 
 int main_bezier (FILE * outf, int argc, const char ** argv)
 {
-    if (argc < 4)
+    if (argc < 5)
         return usage_bezier(argv);
 
     FILE * inf = fopen(argv[3], "r");
-    gen_bezier_patch_write(outf, inf);
+    unsigned tessellation = 0;
+    sscanf(argv[4], "%u", &tessellation);
+    gen_bezier_patch_write(outf, inf, tessellation);
 
     return 0;
 }
