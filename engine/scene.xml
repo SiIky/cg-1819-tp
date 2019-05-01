@@ -8,8 +8,7 @@
 <point X="2.351141" Y="0.000000" Z="-3.236068"/>
 		</translate>
 		<models>
-			<model FILE="../assets/box.3d"/>
-			<model FILE="../assets/cone.3d"/>
+			<model FILE="../assets/sphere.3d"/>
 		</models>
 	</group>
 </scene>

@@ -195,8 +195,10 @@ void sc_draw (struct scene * scene, unsigned int elapsed, bool draw_curves)
 static void sc_load_model (const char * fname, struct model * model)
 {
     FILE * inf = fopen(fname, "r");
+    assert(inf);
     std::vector<struct Point> vec;
-    gen_model_read(inf, &vec);
+    std::vector<struct Point> norm;
+    gen_model_read(inf, &vec, &norm);
     fclose(inf);
 
     float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));

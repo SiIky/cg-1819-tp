@@ -12,8 +12,6 @@
 #include "scene.h"
 #include <math.h>
 
-
-
 #include <vector>
 #include <iostream>
 

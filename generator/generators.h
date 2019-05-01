@@ -196,14 +196,14 @@ struct Box gen_box_from_whd (float width, float height, float depth);
  * @param inf - Input file.
  * @param pt - Point.  
  */
-int gen_point_read (FILE * inf, struct Point * pt);
+int gen_point_read (char * line, struct Point * pt);
 
 /**
  * @brief Reads a model from a file.
  * @param inf - Input file.
  * @param vec - Vector of points.
  */
-void gen_model_read (FILE * inf, std::vector<struct Point> * vec);
+void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norm);
 
 /* Operations on structs */
 

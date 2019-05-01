@@ -9,6 +9,7 @@
 #include <math.h>
 
 #include <assert.h>
+#include <string.h>
 
 #define UNIMPLEMENTED() assert(!"unimplemented")
 
@@ -544,7 +545,9 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
 {
     std::vector<struct Point> verts;
     verts.reserve((sph.slices + 1) * (sph.stacks + 1));
-
+    std::vector<struct Point> normals;
+    normals.reserve((sph.slices + 1) * (sph.stacks + 1));
+    
     for (unsigned i = 0; i <= sph.stacks; i++) {
 	/* Stacks range between 0 and 180 degrees (pi).
          * lat represents the current stack step (limited by the total number of stacks)
@@ -572,6 +575,7 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
             float z = (float) (sph.rad * slon * slat);
 
             verts.push_back(Point(x, y, z));
+            normals.push_back(normalize(Point(x, y, z)));
         }
     }
 
@@ -586,6 +590,19 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
         gen_triangle_write_intern(outf, Triangle(P1, P2, P3));
         gen_triangle_write_intern(outf, Triangle(P2, P1, P4));
     }
+
+    // draws normals
+    fprintf(outf, "normals\n");
+    for (unsigned i = 0; i < len; i++) {
+        struct Point P1 = normals[i];
+        struct Point P2 = normals[i + sph.slices + 1];
+        struct Point P3 = normals[i + sph.slices];
+        struct Point P4 = normals[i + 1];
+
+        gen_triangle_write_intern(outf, Triangle(P1, P2, P3));
+        gen_triangle_write_intern(outf, Triangle(P2, P1, P4));
+    }
+
 }
 
 static void gen_bezier_patch_read (FILE * inf, std::vector<struct Point> * cps, std::vector<std::vector<unsigned>> * patches)
@@ -723,14 +740,21 @@ gen_write(     Sphere,    sphere,    "sphere\n");
  * @brief Reading Functions.
  */
 
-void gen_model_read (FILE * inf, std::vector<struct Point> * vec)
+void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norm)
 {
     char line[1024] = "";
     fgets(line, 1024, inf); /* Ignore first line */
 
     struct Point pt = Point(0, 0, 0);
-    while (gen_point_read(inf, &pt) != EOF) {
+    while (fgets(line, 1024, inf) != NULL
+        && strcmp(line, "normals\n") != 0
+        && gen_point_read(line, &pt) != EOF) {
         vec->push_back(pt);
+        pt = Point(0, 0, 0);
+    }  
+
+    while (fgets(line, 1024, inf) != NULL && gen_point_read(line, &pt) != EOF) {
+        norm->push_back(pt);
         pt = Point(0, 0, 0);
     }
 }
@@ -775,9 +799,9 @@ struct Box gen_box_from_whd (float width, float height, float depth)
             );
 }
 
-int gen_point_read (FILE * inf, struct Point * pt)
+int gen_point_read (char * line, struct Point * pt)
 {
-    return fscanf(inf, "%f %f %f\n", &pt->x, &pt->y, &pt->z);
+    return sscanf(line, "%f %f %f\n", &pt->x, &pt->y, &pt->z);
 }
 
 struct Point Point (float x, float y, float z)
