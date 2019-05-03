@@ -48,8 +48,11 @@ struct group {
 };
 
 struct model {
-    /** VBO ID */
-    GLuint id;
+    /** Verteces VBO ID */
+    GLuint v_id;
+
+    /** Normals VBO ID */
+    GLuint n_id;
 
     /** Vertex count */
     size_t length;

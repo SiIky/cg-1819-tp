@@ -50,6 +50,11 @@ static inline struct Point operator+ (struct Point A, struct Point B)
     return Point(A.x + B.x, A.y + B.y, A.z + B.z);
 }
 
+static inline struct Point operator- (struct Point A, struct Point B)
+{
+    return Point(A.x - B.x, A.y - B.y, A.z - B.z);
+}
+
 /**
  * @brief Calculates the norm of a point.
  * @param v - Given point.
@@ -68,7 +73,7 @@ static inline float norm (struct Point v)
  */
 static inline float dist (struct Point A, struct Point B)
 {
-    return norm((-1 * A) + B);
+    return norm(B - A);
 }
 
 /**
@@ -127,7 +132,7 @@ static void mult_MPM (const float M[4][4], const struct Point P[4][4], struct Po
 static inline void gen_point_write (FILE * outf, struct Point p, struct Point norm)
 {
     fprintf(outf,
-            "%f %f %f"
+            "%f %f %f "
             "%f %f %f\n",
             p.x, p.y, p.z,
             norm.x, norm.y, norm.z
@@ -235,14 +240,13 @@ static void gen_bezier_patch_single (FILE * outf, std::vector<struct Point> cps,
             struct Point P3 = gen_bezier_get_single_point(MPM, u_, v_);
             struct Point P4 = gen_bezier_get_single_point(MPM, u_, v);
 
-            struct Point N1 = Point(0, 0, 0);
-            struct Point N2 = Point(0, 0, 0);
-            struct Point N3 = Point(0, 0, 0);
-            struct Point N4 = Point(0, 0, 0);
+            struct Point N1 = normal(P3 - P1, P2 - P1);
+            struct Point N2 = normal(P4 - P2, P1 - P2);
+            struct Point N3 = normal(P4 - P3, P1 - P3);
+            struct Point N4 = normal(P3 - P4, P2 - P4);
 
             struct Rectangle R = Rectangle(P1, P2, P3, P4);
             struct Rectangle N = Rectangle(N1, N2, N3, N4);
-            /* TODO: Calculate normal */
             gen_rectangle_write_nodivs(outf, R, N);
         }
     }
@@ -257,8 +261,8 @@ void gen_triangle_write (FILE * outf, struct Triangle tri, struct Triangle norms
 
 void gen_rectangle_write (FILE * outf, struct Rectangle rect, unsigned ndivs)
 {
-    const struct Point vw = normalize(rect.P3 + (-1 * rect.P1));
-    const struct Point vh = normalize(rect.P2 + (-1 * rect.P1));
+    const struct Point vw = normalize(rect.P3 - rect.P1);
+    const struct Point vh = normalize(rect.P2 - rect.P1);
     const struct Point N = normal(vw, vh);
     const float w = dist(rect.P3, rect.P1) / (float) ndivs;
     const float h = dist(rect.P2, rect.P1) / (float) ndivs;
@@ -331,7 +335,7 @@ void gen_cone_write (FILE * outf, struct Cone c)
             struct Point P1 = Point(0, c.height, 0);
             struct Point P2 = Point(xi, H, zi);
             struct Point P3 = Point(xi1, H, zi1);
-            struct Point N = normal(P2 + (-1 * P1), P3 + (-1 * P1));
+            struct Point N = normal(P2 - P1, P3 - P1);
 
             gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N, N, N));
         }
@@ -366,7 +370,7 @@ void gen_cone_write (FILE * outf, struct Cone c)
             const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
             const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
             const struct Point P4 = Point(r  * sin((I + 1) * a),  y,  r  * cos((I + 1) * a));
-            const struct Point N = normal(P1 + (-1 * P2), P4 + (-1 * P3));
+            const struct Point N = normal(P1 - P2, P4 - P3);
 
             gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(N, N, N, N));
         }
@@ -480,7 +484,6 @@ void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation)
     std::vector<struct Point> cps;
     std::vector<std::vector<unsigned>> patches;
     gen_bezier_patch_read(inf, &cps, &patches);
-    fprintf(outf, "bezier\n");
     for (std::vector<unsigned> patch : patches)
         gen_bezier_patch_single(outf, cps, patch, tessellation);
 }
@@ -544,7 +547,7 @@ struct Box gen_box_from_whd (float width, float height, float depth)
 bool gen_point_read (char * line, struct Point * pt, struct Point * norm)
 {
     return sscanf(line,
-            "%f %f %f"
+            "%f %f %f "
             "%f %f %f\n",
             &pt->x, &pt->y, &pt->z,
             &norm->x, &norm->y, &norm->z

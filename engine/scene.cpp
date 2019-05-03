@@ -171,8 +171,15 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
 
     for (std::string mname : group->models) {
         struct model model = scene->models[mname];
-        glBindBuffer(GL_ARRAY_BUFFER, model.id);
+
+        /* bind and draw the triangles */
+        glBindBuffer(GL_ARRAY_BUFFER, model.v_id);
         glVertexPointer(3, GL_FLOAT, 0, NULL);
+
+        /* bind and draw normals */
+        glBindBuffer(GL_ARRAY_BUFFER, model.n_id);
+        glNormalPointer(GL_FLOAT, 0, 0);
+
         glDrawArrays(GL_TRIANGLES, 0, model.length);
     }
 
@@ -201,6 +208,7 @@ static void sc_load_model (const char * fname, struct model * model)
     gen_model_read(inf, &vec, &norm);
     fclose(inf);
 
+    model->length = vec.size();
     float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));
 
     {
@@ -210,13 +218,11 @@ static void sc_load_model (const char * fname, struct model * model)
             rafar[i++] = p.y;
             rafar[i++] = p.z;
         }
+
+        glGenBuffers(1, &model->v_id);
+        glBindBuffer(GL_ARRAY_BUFFER, model->v_id);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
     }
-
-    model->length = vec.size();
-
-    glGenBuffers(1, &model->id);
-    glBindBuffer(GL_ARRAY_BUFFER, model->id);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
 
     /* TODO: Nornals array */
     {
@@ -226,6 +232,10 @@ static void sc_load_model (const char * fname, struct model * model)
             rafar[i++] = p.y;
             rafar[i++] = p.z;
         }
+
+        glGenBuffers(1, &model->n_id);
+        glBindBuffer(GL_ARRAY_BUFFER, model->n_id);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
     }
 
     free(rafar);

@@ -164,11 +164,6 @@ int main (int argc, char **argv)
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
 
-#ifndef __APPLE__
-    // init GLEW
-    glewInit();
-#endif
-
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHT1);
@@ -178,6 +173,18 @@ int main (int argc, char **argv)
     glEnable(GL_LIGHT5);
     glEnable(GL_LIGHT6);
     glEnable(GL_LIGHT7);
+
+    const GLfloat ambient[4] = {1, 0, 0, 1};
+    const GLfloat pos[4]     = {0, 0, 0, 1};
+    const GLfloat spec[4]    = {1, 0, 0, 1};
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  ambient);
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+
+#ifndef __APPLE__
+    // init GLEW
+    glewInit();
+#endif
 
     if (!sc_load_file(argv[1], &scene))
         return !0;
