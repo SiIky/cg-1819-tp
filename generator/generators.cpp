@@ -82,6 +82,11 @@ static inline struct Point normalize (struct Point A)
     return 1 / norm(A) * A;
 }
 
+static inline struct Point normal (struct Point p1, struct Point p2)
+{
+    return normalize(Point(p1.y * p2.z, p1.z * p2.x, p1.x * p2.y));
+}
+
 static struct Point mat_dot_product_MP (const float M[4][4], const struct Point P[4][4], unsigned i, unsigned j)
 {
     struct Point ret = Point(0, 0, 0);
@@ -119,24 +124,14 @@ static void mult_MPM (const float M[4][4], const struct Point P[4][4], struct Po
     mult_PM(tmp, M, r);
 }
 
-// Already documented in generators.h //
-
-static inline void gen_point_write_intern (FILE * outf, struct Point p)
+static inline void gen_point_write (FILE * outf, struct Point p, struct Point norm)
 {
-    fprintf(outf, "%f %f %f\n", p.x, p.y, p.z);
-}
-
-static void gen_triangle_write_intern (FILE * outf, struct Triangle tri)
-{
-    gen_point_write_intern(outf, tri.P1);
-    gen_point_write_intern(outf, tri.P2);
-    gen_point_write_intern(outf, tri.P3);
-}
-
-static void gen_rectangle_write_nodivs_intern (FILE * outf, struct Rectangle rect)
-{
-    gen_triangle_write_intern(outf, Triangle(rect.P1, rect.P2, rect.P3));
-    gen_triangle_write_intern(outf, Triangle(rect.P3, rect.P2, rect.P4));
+    fprintf(outf,
+            "%f %f %f"
+            "%f %f %f\n",
+            p.x, p.y, p.z,
+            norm.x, norm.y, norm.z
+           );
 }
 
 /**
@@ -150,10 +145,121 @@ static void gen_rectangle_write_nodivs_intern (FILE * outf, struct Rectangle rec
  * |        |        |
  * P2 ---- P24 ---- P4
  */
-static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsigned ndivs)
+static void gen_rectangle_write_nodivs (FILE * outf, struct Rectangle rect, struct Rectangle norm)
+{
+    gen_triangle_write(outf, Triangle(rect.P1, rect.P2, rect.P3), Triangle(norm.P1, norm.P2, norm.P3));
+    gen_triangle_write(outf, Triangle(rect.P3, rect.P2, rect.P4), Triangle(norm.P3, norm.P2, norm.P4));
+}
+
+static struct Point gen_bezier_get_single_point (const struct Point MPM[4][4], float u, float v)
+{
+    struct Point tmp[4];
+    for (unsigned j = 0; j < 4; j++)
+        tmp[j] = (u * u * u * MPM[j][0])
+            + (u * u * MPM[j][1])
+            + (u * MPM[j][2])
+            + MPM[j][3];
+    return (v * v * v * tmp[0])
+        + (v * v * tmp[1])
+        + (v * tmp[2])
+        + tmp[3];
+}
+
+static void gen_bezier_patch_read (FILE * inf, std::vector<struct Point> * cps, std::vector<std::vector<unsigned>> * patches)
+{
+    /* # of patches to read */
+    unsigned npatches = 0;
+    fscanf(inf, "%u\n", &npatches);
+    patches->reserve(npatches);
+
+    /* read the patches */
+    for (unsigned p = 0; p < npatches; p++) {
+        std::vector<unsigned> patch;
+        patch.reserve(16);
+
+        unsigned idx = 0;
+        for (unsigned i = 0; i < 15; i++) {
+            fscanf(inf, "%u, ", &idx);
+            patch.push_back(idx);
+        }
+
+        fscanf(inf, "%u\n", &idx);
+        patch.push_back(idx);
+
+        patches->push_back(patch);
+    }
+
+    /* # of control points */
+    unsigned ncps = 0;
+    fscanf(inf, "%u\n", &ncps);
+    cps->reserve(ncps);
+
+    /* read the control points */
+    for (unsigned cp = 0; cp < ncps; cp++) {
+        struct Point pt = Point(0, 0, 0);
+        fscanf(inf, "%f, %f, %f\n", &pt.x, &pt.y, &pt.z);
+        cps->push_back(pt);
+    }
+}
+
+static void gen_bezier_patch_single (FILE * outf, std::vector<struct Point> cps, std::vector<unsigned> idxs, unsigned tessellation)
+{
+    const float M[4][4] = {
+        { -1,  3, -3, 1, },
+        {  3, -6,  3, 0, },
+        { -3,  3,  0, 0, },
+        {  1,  0,  0, 0, },
+    };
+
+    const struct Point P[4][4] = {
+        { cps[idxs[0]],  cps[idxs[1]],  cps[idxs[2]],  cps[idxs[3]],  },
+        { cps[idxs[4]],  cps[idxs[5]],  cps[idxs[6]],  cps[idxs[7]],  },
+        { cps[idxs[8]],  cps[idxs[9]],  cps[idxs[10]], cps[idxs[11]], },
+        { cps[idxs[12]], cps[idxs[13]], cps[idxs[14]], cps[idxs[15]], },
+    };
+
+    struct Point p = Point(0, 0, 0);
+    struct Point MPM[4][4];
+    mult_MPM(M, P, MPM);
+
+    for (unsigned i = 1; i <= 4 * tessellation; i++) {
+        float u  = ((float) i)     / (4.0 * tessellation);
+        float u_ = ((float) i - 1) / (4.0 * tessellation);
+
+        for (unsigned j = 1; j <= 4 * tessellation; j++) {
+            float v  = ((float) j)     / (4.0 * tessellation);
+            float v_ = ((float) j - 1) / (4.0 * tessellation);
+
+            struct Point P1 = gen_bezier_get_single_point(MPM, u,  v_);
+            struct Point P2 = gen_bezier_get_single_point(MPM, u,  v);
+            struct Point P3 = gen_bezier_get_single_point(MPM, u_, v_);
+            struct Point P4 = gen_bezier_get_single_point(MPM, u_, v);
+
+            struct Point N1 = Point(0, 0, 0);
+            struct Point N2 = Point(0, 0, 0);
+            struct Point N3 = Point(0, 0, 0);
+            struct Point N4 = Point(0, 0, 0);
+
+            struct Rectangle R = Rectangle(P1, P2, P3, P4);
+            struct Rectangle N = Rectangle(N1, N2, N3, N4);
+            /* TODO: Calculate normal */
+            gen_rectangle_write_nodivs(outf, R, N);
+        }
+    }
+}
+
+void gen_triangle_write (FILE * outf, struct Triangle tri, struct Triangle norms)
+{
+    gen_point_write(outf, tri.P1, norms.P1);
+    gen_point_write(outf, tri.P2, norms.P2);
+    gen_point_write(outf, tri.P3, norms.P3);
+}
+
+void gen_rectangle_write (FILE * outf, struct Rectangle rect, unsigned ndivs)
 {
     const struct Point vw = normalize(rect.P3 + (-1 * rect.P1));
     const struct Point vh = normalize(rect.P2 + (-1 * rect.P1));
+    const struct Point N = normal(vw, vh);
     const float w = dist(rect.P3, rect.P1) / (float) ndivs;
     const float h = dist(rect.P2, rect.P1) / (float) ndivs;
 
@@ -164,12 +270,12 @@ static void gen_rectangle_write_intern (FILE * outf, struct Rectangle rect, unsi
             struct Point P3 = rect.P1 + (((float)  i      * w) * vw) + (((float) (j - 1) * h) * vh);
             struct Point P4 = rect.P1 + (((float)  i      * w) * vw) + (((float)  j      * h) * vh);
 
-            gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(N, N, N, N));
         }
     }
 }
 
-static void gen_box_write_intern (FILE * outf, struct Box box, unsigned ndivs)
+void gen_box_write (FILE * outf, struct Box box, unsigned ndivs)
 {
 #   define p1 box.top.P1
 #   define p2 box.top.P2
@@ -180,250 +286,13 @@ static void gen_box_write_intern (FILE * outf, struct Box box, unsigned ndivs)
 #   define p7 box.bottom.P3
 #   define p8 box.bottom.P4
 
-    gen_rectangle_write_intern(outf, Rectangle(p1, p5, p2, p6), ndivs); /* Back Left */
-    gen_rectangle_write_intern(outf, Rectangle(p3, p7, p1, p5), ndivs); /* Back Right */
-    gen_rectangle_write_intern(outf, Rectangle(p7, p8, p5, p6), ndivs); /* Base */
+    gen_rectangle_write(outf, Rectangle(p1, p5, p2, p6), ndivs); /* Back Left */
+    gen_rectangle_write(outf, Rectangle(p3, p7, p1, p5), ndivs); /* Back Right */
+    gen_rectangle_write(outf, Rectangle(p7, p8, p5, p6), ndivs); /* Base */
 
-    gen_rectangle_write_intern(outf, Rectangle(p2, p6, p4, p8), ndivs); /* Front Left */
-    gen_rectangle_write_intern(outf, Rectangle(p4, p8, p3, p7), ndivs); /* Front Right */
-    gen_rectangle_write_intern(outf, box.top, ndivs);
-}
-
-static void gen_xmas_tree0_write_intern (FILE * outf, struct Cone c)
-{
-	float a = (float) ((2 * M_PI) / c.slices);
-	struct Point O = Point(0, 0, 0);
-
-	for (unsigned i = 0; i < c.slices; i++) {
-		const float I = (float) i;
-
-		/* draw top mini cone */
-		{
-			const float R = c.rad / c.stacks;
-			const float H = c.height * ((c.stacks - 1) / c.stacks);
-
-			const float xi = R * sin(I * a);
-			const float zi = R * cos(I * a);
-
-			const float xi1 = R * sin((I + 1) * a);
-			const float zi1 = R * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(0, c.height, 0),
-						Point(xi, H, zi),
-						Point(xi1, H, zi1)));
-		}
-
-		/* draw base */
-		{
-			const float xi = c.rad * sin(I * a);
-			const float zi = c.rad * cos(I * a);
-
-			const float xi1 = c.rad * sin((I + 1) * a);
-			const float zi1 = c.rad * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(xi,  0, zi),
-						Point(0,   0, 0),
-						Point(xi1, 0, zi1)));
-		}
-
-		/* draw side */
-		for (unsigned j = 0; j < c.stacks - 1; j++) {
-			const float J = (float) j;
-
-			const float r1 = c.rad * ((c.stacks - J)       / c.stacks);
-			const float r  = c.rad * ((c.stacks - (J + 1)) / c.stacks);
-
-			const float y  = c.height * (J / c.stacks);
-			const float y1 = c.height * ((J + 1) / c.stacks);
-
-			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
-			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
-			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
-			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
-
-			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
-		}
-	}
-}
-
-static void gen_xmas_tree1_write_intern (FILE * outf, struct Cone c)
-{
-	float a = (float) ((2 * M_PI) / c.slices);
-	struct Point O = Point(0, 0, 0);
-
-	for (unsigned i = 0; i < c.slices; i++) {
-		const float I = (float) i;
-
-		/* draw top mini cone */
-		{
-			const float R = c.rad / c.stacks;
-			const float H = c.height * ((c.stacks - 1) / c.stacks);
-
-			const float xi = R * sin(I * a);
-			const float zi = R * cos(I * a);
-
-			const float xi1 = R * sin((I + 1) * a);
-			const float zi1 = R * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(0, c.height, 0),
-						Point(xi, H, zi),
-						Point(xi1, H, zi1)));
-		}
-
-		/* draw base */
-		{
-			const float xi = c.rad * sin(I * a);
-			const float zi = c.rad * cos(I * a);
-
-			const float xi1 = c.rad * sin((I + 1) * a);
-			const float zi1 = c.rad * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(xi,  0, zi),
-						Point(0,   0, 0),
-						Point(xi1, 0, zi1)));
-		}
-
-		/* draw side */
-		for (unsigned j = 0; j < c.stacks - 1; j++) {
-			const float J = (float) j;
-
-			const float y  = c.height * (J / c.stacks);
-			const float y1 = c.height * ((J + 1) / c.stacks);
-
-			const float r  = c.rad * y;
-			const float r1 = c.rad * y1;
-
-			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
-			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
-			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
-			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
-
-			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
-		}
-	}
-}
-
-static void gen_xmas_tree2_write_intern (FILE * outf, struct Cone c)
-{
-	float a = (float) ((2 * M_PI) / c.slices);
-	struct Point O = Point(0, 0, 0);
-
-	for (unsigned i = 0; i < c.slices; i++) {
-		const float I = (float) i;
-
-		/* draw top mini cone */
-		{
-			const float R = c.rad / c.stacks;
-			const float H = c.height * ((c.stacks - 1) / c.stacks);
-
-			const float xi = R * sin(I * a);
-			const float zi = R * cos(I * a);
-
-			const float xi1 = R * sin((I + 1) * a);
-			const float zi1 = R * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(0, c.height, 0),
-						Point(xi, H, zi),
-						Point(xi1, H, zi1)));
-		}
-
-		/* draw base */
-		{
-			const float xi = c.rad * sin(I * a);
-			const float zi = c.rad * cos(I * a);
-
-			const float xi1 = c.rad * sin((I + 1) * a);
-			const float zi1 = c.rad * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(xi,  0, zi),
-						Point(0,   0, 0),
-						Point(xi1, 0, zi1)));
-		}
-
-		/* draw side */
-		for (unsigned j = 0; j < c.stacks - 1; j++) {
-			const float J = (float) j;
-
-			const float y  = c.height * (J / c.stacks);
-			const float y1 = c.height * ((J + 1) / c.stacks);
-
-			const float r  = c.rad * y  / c.height;
-			const float r1 = c.rad * y1 / c.height;
-
-			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
-			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
-			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
-			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
-
-			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
-		}
-	}
-}
-
-static void gen_xmas_tree3_write_intern (FILE * outf, struct Cone c)
-{
-	const float a = (float) ((2 * M_PI) / (float) c.slices);
-	const struct Point O = Point(0, 0, 0);
-	const float st = (float) c.stacks;
-
-	for (unsigned i = 0; i < c.slices; i++) {
-		const float I = (float) i;
-
-		/* draw top mini cone */
-		{
-			const float R = c.rad / st;
-			const float H = c.height * (st - 1) / st;
-
-			const float xi = R * sin(I * a);
-			const float zi = R * cos(I * a);
-
-			const float xi1 = R * sin((I + 1) * a);
-			const float zi1 = R * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(0,   c.height, 0),
-						Point(xi,  H,        zi),
-						Point(xi1, H,        zi1)));
-		}
-
-		/* draw base */
-		{
-			const float xi = c.rad * sin(I * a);
-			const float zi = c.rad * cos(I * a);
-
-			const float xi1 = c.rad * sin((I + 1) * a);
-			const float zi1 = c.rad * cos((I + 1) * a);
-
-			gen_triangle_write_intern(outf, Triangle(
-						Point(xi,  0, zi),
-						Point(0,   0, 0),
-						Point(xi1, 0, zi1)));
-		}
-
-		/* draw side */
-		for (unsigned j = 0; j < (c.stacks - 1); j++) {
-			const float J = (float) j;
-
-			const float y  = c.height * ((J + 1) / st);
-			const float y1 = c.height * (J / st);
-
-			const float r  = c.rad * y  / c.height;
-			const float r1 = c.rad * y1 / c.height;
-
-			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
-			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
-			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
-			const struct Point P4 = Point(r  * sin((I + 1) * a),  y1, r  * cos((I + 1) * a));
-
-			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
-		}
-	}
+    gen_rectangle_write(outf, Rectangle(p2, p6, p4, p8), ndivs); /* Front Left */
+    gen_rectangle_write(outf, Rectangle(p4, p8, p3, p7), ndivs); /* Front Right */
+    gen_rectangle_write(outf, box.top, ndivs);
 }
 
 /*
@@ -439,67 +308,72 @@ static void gen_xmas_tree3_write_intern (FILE * outf, struct Cone c)
  * ------+------
  *    r
  */
-static void gen_cone_write_intern (FILE * outf, struct Cone c)
+void gen_cone_write (FILE * outf, struct Cone c)
 {
-	const float a = (float) ((2 * M_PI) / (float) c.slices);
-	const struct Point O = Point(0, 0, 0);
-	const float st = (float) c.stacks;
+    const float a = (float) ((2 * M_PI) / (float) c.slices);
+    const struct Point O = Point(0, 0, 0);
+    const float st = (float) c.stacks;
 
-	for (unsigned i = 0; i < c.slices; i++) {
-		const float I = (float) i;
+    for (unsigned i = 0; i < c.slices; i++) {
+        const float I = (float) i;
 
-		/* draw top mini cone */
-		{
-			const float R = c.rad / st;
-			const float H = c.height * (st - 1) / st;
+        /* draw top mini cone */
+        {
+            const float R = c.rad / st;
+            const float H = c.height * (st - 1) / st;
 
-			const float xi = R * sin(I * a);
-			const float zi = R * cos(I * a);
+            const float xi = R * sin(I * a);
+            const float zi = R * cos(I * a);
 
-			const float xi1 = R * sin((I + 1) * a);
-			const float zi1 = R * cos((I + 1) * a);
+            const float xi1 = R * sin((I + 1) * a);
+            const float zi1 = R * cos((I + 1) * a);
 
-			gen_triangle_write_intern(outf, Triangle(
-						Point(0,   c.height, 0),
-						Point(xi,  H,        zi),
-						Point(xi1, H,        zi1)));
-		}
+            struct Point P1 = Point(0, c.height, 0);
+            struct Point P2 = Point(xi, H, zi);
+            struct Point P3 = Point(xi1, H, zi1);
+            struct Point N = normal(P2 + (-1 * P1), P3 + (-1 * P1));
 
-		/* draw base */
-		{
-			const float xi = c.rad * sin(I * a);
-			const float zi = c.rad * cos(I * a);
+            gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N, N, N));
+        }
 
-			const float xi1 = c.rad * sin((I + 1) * a);
-			const float zi1 = c.rad * cos((I + 1) * a);
+        /* draw base */
+        {
+            const float xi = c.rad * sin(I * a);
+            const float zi = c.rad * cos(I * a);
 
-			gen_triangle_write_intern(outf, Triangle(
-						Point(xi,  0, zi),
-						Point(0,   0, 0),
-						Point(xi1, 0, zi1)));
-		}
+            const float xi1 = c.rad * sin((I + 1) * a);
+            const float zi1 = c.rad * cos((I + 1) * a);
 
-		/* draw side */
-		for (unsigned j = 0; j < (c.stacks - 1); j++) {
-			const float J = (float) j;
+            struct Point P1 = Point(xi, 0, zi);
+            struct Point P2 = Point(0, 0, 0);
+            struct Point P3 = Point(xi1, 0, zi1);
+            const struct Point N = Point(0, -1, 0);
 
-			const float y  = c.height * (J       / st);
-			const float y1 = c.height * ((J + 1) / st);
+            gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N, N, N));
+        }
 
-			const float r  = c.rad * (st - J)     / st;
-			const float r1 = c.rad * (st - J - 1) / st;
+        /* draw side */
+        for (unsigned j = 0; j < (c.stacks - 1); j++) {
+            const float J = (float) j;
 
-			const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
-			const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
-			const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
-			const struct Point P4 = Point(r  * sin((I + 1) * a),  y,  r  * cos((I + 1) * a));
+            const float y  = c.height * (J       / st);
+            const float y1 = c.height * ((J + 1) / st);
 
-			gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
-		}
-	}
+            const float r  = c.rad * (st - J)     / st;
+            const float r1 = c.rad * (st - J - 1) / st;
+
+            const struct Point P1 = Point(r1 * sin(I       * a),  y1, r1 * cos(I       * a));
+            const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
+            const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
+            const struct Point P4 = Point(r  * sin((I + 1) * a),  y,  r  * cos((I + 1) * a));
+            const struct Point N = normal(P1 + (-1 * P2), P4 + (-1 * P3));
+
+            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(N, N, N, N));
+        }
+    }
 }
 
-static void gen_cylinder_write_intern (FILE * outf, struct Cylinder c)
+void gen_cylinder_write (FILE * outf, struct Cylinder c)
 {
     float a = (float) ((2 * M_PI) / c.slices);
 
@@ -522,8 +396,9 @@ static void gen_cylinder_write_intern (FILE * outf, struct Cylinder c)
 
         struct Triangle Bi = Triangle(PiB, O, Pi1B);
         struct Triangle Ti = Triangle(C, PiT, Pi1T);
+        struct Point N = Point(0, -1, 0);
 
-        gen_triangle_write_intern(outf, Bi);
+        gen_triangle_write(outf, Bi, Triangle(N, N, N));
 
         for (unsigned j = 0; j < c.stacks; j++) {
             const float dh = c.height / (float) c.stacks;
@@ -534,22 +409,25 @@ static void gen_cylinder_write_intern (FILE * outf, struct Cylinder c)
             struct Point P3 = Pi1B + Point(0, y13, 0);
             struct Point P4 = Pi1B + Point(0, y24, 0);
 
-            gen_rectangle_write_nodivs_intern(outf, Rectangle(P1, P2, P3, P4));
+            struct Point Ni = Point(PiB.x, 0, PiB.z);
+            struct Point Ni1 = Point(Pi1B.x, 0, Pi1B.z);
+            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(Ni, Ni, Ni1, Ni1));
         }
 
-        gen_triangle_write_intern(outf, Ti);
+        N = Point(0, 1, 0);
+        gen_triangle_write(outf, Ti, Triangle(N, N, N));
     }
 }
 
-static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
+void gen_sphere_write (FILE * outf, struct Sphere sph)
 {
     std::vector<struct Point> verts;
     verts.reserve((sph.slices + 1) * (sph.stacks + 1));
     std::vector<struct Point> normals;
     normals.reserve((sph.slices + 1) * (sph.stacks + 1));
-    
+
     for (unsigned i = 0; i <= sph.stacks; i++) {
-	/* Stacks range between 0 and 180 degrees (pi).
+        /* Stacks range between 0 and 180 degrees (pi).
          * lat represents the current stack step (limited by the total number of stacks)
          */
         double lat = ((double) i) / ((double) sph.stacks) * M_PI;
@@ -587,121 +465,14 @@ static void gen_sphere_write_intern (FILE * outf, struct Sphere sph)
         struct Point P3 = verts[i + sph.slices];
         struct Point P4 = verts[i + 1];
 
-        gen_triangle_write_intern(outf, Triangle(P1, P2, P3));
-        gen_triangle_write_intern(outf, Triangle(P2, P1, P4));
+        struct Point N1 = normals[i];
+        struct Point N2 = normals[i + sph.slices + 1];
+        struct Point N3 = normals[i + sph.slices];
+        struct Point N4 = normals[i + 1];
+
+        gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N1, N2, N3));
+        gen_triangle_write(outf, Triangle(P2, P1, P4), Triangle(N2, N1, N4));
     }
-
-    // draws normals
-    fprintf(outf, "normals\n");
-    for (unsigned i = 0; i < len; i++) {
-        struct Point P1 = normals[i];
-        struct Point P2 = normals[i + sph.slices + 1];
-        struct Point P3 = normals[i + sph.slices];
-        struct Point P4 = normals[i + 1];
-
-        gen_triangle_write_intern(outf, Triangle(P1, P2, P3));
-        gen_triangle_write_intern(outf, Triangle(P2, P1, P4));
-    }
-
-}
-
-static void gen_bezier_patch_read (FILE * inf, std::vector<struct Point> * cps, std::vector<std::vector<unsigned>> * patches)
-{
-    /* # of patches to read */
-    unsigned npatches = 0;
-    fscanf(inf, "%u\n", &npatches);
-    patches->reserve(npatches);
-
-    /* read the patches */
-    for (unsigned p = 0; p < npatches; p++) {
-        std::vector<unsigned> patch;
-        patch.reserve(16);
-
-        unsigned idx = 0;
-
-        for (unsigned i = 0; i < 15; i++) {
-            fscanf(inf, "%u, ", &idx);
-            patch.push_back(idx);
-        }
-
-        fscanf(inf, "%u\n", &idx);
-        patch.push_back(idx);
-
-        patches->push_back(patch);
-    }
-
-    /* # of control points */
-    unsigned ncps = 0;
-    fscanf(inf, "%u\n", &ncps);
-    cps->reserve(ncps);
-
-    /* read the control points */
-    for (unsigned cp = 0; cp < ncps; cp++) {
-        struct Point pt = Point(0, 0, 0);
-        fscanf(inf, "%f, %f, %f\n", &pt.x, &pt.y, &pt.z);
-        cps->push_back(pt);
-    }
-}
-
-struct Point gen_bezier_get_single_point (const struct Point MPM[4][4], float u, float v)
-{
-    struct Point tmp[4];
-
-    for (unsigned j = 0; j < 4; j++)
-        tmp[j] = (u * u * u * MPM[j][0])
-            + (u * u * MPM[j][1])
-            + (u * MPM[j][2])
-            + MPM[j][3];
-
-    return (v * v * v * tmp[0])
-        + (v * v * tmp[1])
-        + (v * tmp[2])
-        + tmp[3];
-}
-
-static void gen_bezier_patch_single (FILE * outf, const float M[4][4], std::vector<struct Point> cps, std::vector<unsigned> idxs, unsigned tessellation)
-{
-    const struct Point P[4][4] = {
-        { cps[idxs[0]],  cps[idxs[1]],  cps[idxs[2]],  cps[idxs[3]], },
-        { cps[idxs[4]],  cps[idxs[5]],  cps[idxs[6]],  cps[idxs[7]], },
-        { cps[idxs[8]],  cps[idxs[9]],  cps[idxs[10]], cps[idxs[11]], },
-        { cps[idxs[12]], cps[idxs[13]], cps[idxs[14]], cps[idxs[15]], },
-    };
-
-    struct Point p = Point(0, 0, 0);
-    struct Point MPM[4][4];
-    mult_MPM(M, P, MPM);
-
-    for (unsigned i = 1; i <= 4 * tessellation; i++) {
-        float u_ = ((float) i - 1) / (4.0 * tessellation);
-        float u = ((float) i) / (4.0 * tessellation);
-
-        for (unsigned j = 1; j <= 4 * tessellation; j++) {
-            float v_ = ((float) j - 1) / (4.0 * tessellation);
-            float v = ((float) j) / (4.0 * tessellation);
-
-            struct Point P1 = gen_bezier_get_single_point(MPM, u, v_);
-            struct Point P2 = gen_bezier_get_single_point(MPM, u, v);
-            struct Point P3 = gen_bezier_get_single_point(MPM, u_, v_);
-            struct Point P4 = gen_bezier_get_single_point(MPM, u_, v);
-
-            struct Rectangle R = Rectangle(P1, P2, P3, P4);
-            gen_rectangle_write_nodivs_intern(outf, R);
-        }
-    }
-}
-
-static void gen_bezier_patch_write_intern (FILE * outf, std::vector<struct Point> cps, std::vector<std::vector<unsigned>> patches, unsigned tessellation)
-{
-    const float M[4][4] = {
-        { -1,  3, -3, 1, },
-        {  3, -6,  3, 0, },
-        { -3,  3,  0, 0, },
-        {  1,  0,  0, 0, },
-    };
-
-    for (std::vector<unsigned> patch : patches)
-        gen_bezier_patch_single(outf, M, cps, patch, tessellation);
 }
 
 void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation)
@@ -710,64 +481,35 @@ void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation)
     std::vector<std::vector<unsigned>> patches;
     gen_bezier_patch_read(inf, &cps, &patches);
     fprintf(outf, "bezier\n");
-    gen_bezier_patch_write_intern(outf, cps, patches, tessellation);
+    for (std::vector<unsigned> patch : patches)
+        gen_bezier_patch_single(outf, cps, patch, tessellation);
 }
 
 /**
- * @brief Writing functions.
+ * Reading Functions.
  */
 
-#define gen_write(Fig, fig, id) \
-    void gen_ ## fig ## _write (FILE * outf, struct Fig fig) { \
-        fprintf(outf, id);                                     \
-        gen_ ## fig ## _write_intern(outf, fig);               \
-    } void gen_ ## fig ## _write (FILE * outf, struct Fig fig)
-
-#define gen_write_divs(Fig, fig, id) \
-    void gen_ ## fig ## _write (FILE * outf, struct Fig fig, unsigned ndivs) { \
-        fprintf(outf, id);                                                     \
-        gen_ ## fig ## _write_intern(outf, fig, ndivs);                        \
-    } void gen_ ## fig ## _write (FILE * outf, struct Fig fig, unsigned ndivs)
-
-gen_write(     Triangle,  triangle,  "triangle\n");
-gen_write_divs(Rectangle, rectangle, "rectangle\n");
-gen_write_divs(Box,       box,       "box\n");
-gen_write(     Cone,      cone,      "cone\n");
-gen_write(     Cylinder,  cylinder,  "cylinder\n");
-gen_write(     Sphere,    sphere,    "sphere\n");
-
-/**
- * @brief Reading Functions.
- */
-
-void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norm)
+void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norms)
 {
     char line[1024] = "";
-    fgets(line, 1024, inf); /* Ignore first line */
-
     struct Point pt = Point(0, 0, 0);
-    while (fgets(line, 1024, inf) != NULL
-        && strcmp(line, "normals\n") != 0
-        && gen_point_read(line, &pt) != EOF) {
+    struct Point norm = Point(0, 0, 0);
+    while (fgets(line, 1024, inf) != NULL && gen_point_read(line, &pt, &norm)) {
         vec->push_back(pt);
+        norms->push_back(norm);
         pt = Point(0, 0, 0);
-    }  
-
-    while (fgets(line, 1024, inf) != NULL && gen_point_read(line, &pt) != EOF) {
-        norm->push_back(pt);
-        pt = Point(0, 0, 0);
+        norm = Point(0, 0, 0);
     }
 }
 
 /**
- * @brief Utility functions.
+ * Utility functions.
  */
 
 struct Rectangle gen_rectangle_from_wd (float width, float depth)
 {
     float w = width / 2;
     float d = depth / 2;
-
     return Rectangle(
             Point(-w, 0, -d),
             Point(-w, 0,  d),
@@ -799,9 +541,14 @@ struct Box gen_box_from_whd (float width, float height, float depth)
             );
 }
 
-int gen_point_read (char * line, struct Point * pt)
+bool gen_point_read (char * line, struct Point * pt, struct Point * norm)
 {
-    return sscanf(line, "%f %f %f\n", &pt->x, &pt->y, &pt->z);
+    return sscanf(line,
+            "%f %f %f"
+            "%f %f %f\n",
+            &pt->x, &pt->y, &pt->z,
+            &norm->x, &norm->y, &norm->z
+            ) == 6;
 }
 
 struct Point Point (float x, float y, float z)

@@ -162,9 +162,9 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
             case GT_SCALE:          sc_draw_scale(&gt);                   break;
             case GT_TRANSLATE:      sc_draw_translate(&gt);               break;
             case GT_TRANSLATE_ANIM:
-                if (draw_curves) sc_draw_cm_curve(&gt);
-                sc_draw_translate_anim(&gt, elapsed);
-                break;
+                                    if (draw_curves) sc_draw_cm_curve(&gt);
+                                    sc_draw_translate_anim(&gt, elapsed);
+                                    break;
             default: UNREACHABLE();
         }
     }
@@ -202,11 +202,14 @@ static void sc_load_model (const char * fname, struct model * model)
     fclose(inf);
 
     float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));
-    unsigned i = 0;
-    for (struct Point p : vec) {
-        rafar[i++] = p.x;
-        rafar[i++] = p.y;
-        rafar[i++] = p.z;
+
+    {
+        unsigned i = 0;
+        for (struct Point p : vec) {
+            rafar[i++] = p.x;
+            rafar[i++] = p.y;
+            rafar[i++] = p.z;
+        }
     }
 
     model->length = vec.size();
@@ -214,6 +217,17 @@ static void sc_load_model (const char * fname, struct model * model)
     glGenBuffers(1, &model->id);
     glBindBuffer(GL_ARRAY_BUFFER, model->id);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
+
+    /* TODO: Nornals array */
+    {
+        unsigned i = 0;
+        for (struct Point p : norm) {
+            rafar[i++] = p.x;
+            rafar[i++] = p.y;
+            rafar[i++] = p.z;
+        }
+    }
+
     free(rafar);
 }
 

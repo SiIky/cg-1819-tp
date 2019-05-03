@@ -18,32 +18,26 @@ enum type {
 };
 
 struct gt {
-    /*
+    /**
      * GT_ROTATE: axis to rotate around
      * GT_TRANSLATE: translation offset
      * GT_SCALE: scaling scalars
      */
     struct Point p;
 
-    /*
-     * GT_ROTATE: angle to rotate
-     */
+    /** GT_ROTATE: angle to rotate */
     float angle;
 
-    /*
+    /**
      * GT_ROTATE_ANIM: time in msecs for a full 360 rotation
      * GT_TRANSLATE_ANIM: time in msecs to execute the full animation
      */
     unsigned time;
 
-    /*
-     * GT_TRANSLATE_ANIM: Catmull-Rom Control Points
-     */
+    /** GT_TRANSLATE_ANIM: Catmull-Rom Control Points */
     std::vector<struct Point> control_points;
 
-    /*
-     * what kind of Geometric Transformation?
-     */
+    /** what kind of Geometric Transformation? */
     enum type type;
 };
 
@@ -54,14 +48,10 @@ struct group {
 };
 
 struct model {
-    /*
-     * VBO ID
-     */
+    /** VBO ID */
     GLuint id;
 
-    /*
-     * Vertex count
-     */
+    /** Vertex count */
     size_t length;
 };
 

@@ -88,7 +88,7 @@ struct Sphere {
  * | /
  * P2
  */
-void gen_triangle_write (FILE * outf, struct Triangle tri);
+void gen_triangle_write (FILE * outf, struct Triangle tri, struct Triangle norms);
 
 /**
  * @brief Outputs to a file the result of generating a rectangle with the provided values.
@@ -196,7 +196,7 @@ struct Box gen_box_from_whd (float width, float height, float depth);
  * @param inf - Input file.
  * @param pt - Point.  
  */
-int gen_point_read (char * line, struct Point * pt);
+bool gen_point_read (char * line, struct Point * pt, struct Point * norm);
 
 /**
  * @brief Reads a model from a file.

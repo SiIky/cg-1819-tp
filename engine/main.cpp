@@ -32,7 +32,7 @@ void changeSize (int w, int h)
 
     // compute window's aspect ratio
     float ratio = w * 1.0 / h;
-	gluPerspective(45.0f, ratio, 1.0f, 100000000000000000.0f);
+    gluPerspective(45.0f, ratio, 1.0f, 100000000000000000.0f);
     // Set the projection matrix as current
     glMatrixMode(GL_PROJECTION);
     // Load Identity Matrix
@@ -162,11 +162,22 @@ int main (int argc, char **argv)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
 
 #ifndef __APPLE__
     // init GLEW
     glewInit();
 #endif
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1);
+    glEnable(GL_LIGHT2);
+    glEnable(GL_LIGHT3);
+    glEnable(GL_LIGHT4);
+    glEnable(GL_LIGHT5);
+    glEnable(GL_LIGHT6);
+    glEnable(GL_LIGHT7);
 
     if (!sc_load_file(argv[1], &scene))
         return !0;
