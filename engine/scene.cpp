@@ -190,8 +190,29 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
     }
 }
 
+static void sc_draw_light (struct scene * scene, struct light * light, unsigned i)
+{
+    float w = (light->type == LT_POINT) ?
+        1:
+        (light->type == LT_DIR) ?
+        0:
+        (light->type == LT_SPOT) ?
+        2:
+        0;
+    GLfloat cenas[4] = { light->pos.x, light->pos.y, light->pos.z, w, };
+    GLfloat colour[4] = { 1, 1, 1, 0 };
+    glLightfv(GL_LIGHT0 + i, GL_POSITION, cenas);
+    glLightfv(GL_LIGHT0 + i, GL_AMBIENT, colour);
+    glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, colour);
+}
+
 void sc_draw (struct scene * scene, unsigned int elapsed, bool draw_curves)
 {
+    unsigned i = 0;
+    for (struct light * light : scene->lights) {
+        sc_draw_light(scene, light, i++);
+    }
+
     for (struct group * group : scene->groups) {
         glPushMatrix();
         sc_draw_group(scene, group, elapsed, draw_curves);
@@ -224,7 +245,6 @@ static void sc_load_model (const char * fname, struct model * model)
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
     }
 
-    /* TODO: Nornals array */
     {
         unsigned i = 0;
         for (struct Point p : norm) {
@@ -343,6 +363,36 @@ static void sc_load_group (pugi::xml_node node, struct scene * scene, struct gro
     }
 }
 
+static void sc_load_light (pugi::xml_node node, struct scene * scene, unsigned i)
+{
+    if (!node.attribute("TYPE"))
+        return;
+
+    struct light * light = (struct light*) calloc(1, sizeof(struct light));
+    float x = maybe(node.attribute("X"), 0);
+    float y = maybe(node.attribute("Y"), 0);
+    float z = maybe(node.attribute("Z"), 0);
+
+    light->pos = Point(x, y, z);
+    light->type = (strcmp("POINT", node.attribute("TYPE").value()) == 0) ?
+        LT_POINT:
+        (strcmp("DIR", node.attribute("TYPE").value()) == 0) ?
+        LT_DIR:
+        (strcmp("SPOT", node.attribute("TYPE").value()) == 0) ?
+        LT_SPOT:
+        LT_POINT;
+
+    scene->lights.push_back(light);
+}
+
+static void sc_load_lights (pugi::xml_node node, struct scene * scene)
+{
+    unsigned i = 0;
+    for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling())
+        if (strcmp("light", trans.name()) == 0)
+            sc_load_light(trans, scene, i++);
+}
+
 bool sc_load_file (const char * path, struct scene * scene)
 {
     pugi::xml_document doc;
@@ -356,6 +406,8 @@ bool sc_load_file (const char * path, struct scene * scene)
             struct group * group = (struct group*) calloc(1, sizeof(struct group));
             sc_load_group(trans, scene, group);
             scene->groups.push_back(group);
+        } else if (strcmp("lights", trans.name()) == 0) {
+            sc_load_lights(trans, scene);
         }
     }
 

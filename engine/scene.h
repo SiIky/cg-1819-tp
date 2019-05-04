@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-enum type {
+enum gt_type {
     GT_ROTATE,
     GT_ROTATE_ANIM,
     GT_SCALE,
@@ -38,7 +38,7 @@ struct gt {
     std::vector<struct Point> control_points;
 
     /** what kind of Geometric Transformation? */
-    enum type type;
+    enum gt_type type;
 };
 
 struct group {
@@ -58,8 +58,20 @@ struct model {
     size_t length;
 };
 
+enum lt_type {
+    LT_POINT,
+    LT_SPOT,
+    LT_DIR,
+};
+
+struct light {
+    enum lt_type type;
+    struct Point pos;
+};
+
 struct scene {
-    std::vector<struct group*> groups;
+    std::vector<struct light*>          lights;
+    std::vector<struct group*>          groups;
     std::map<std::string, struct model> models;
 };
 

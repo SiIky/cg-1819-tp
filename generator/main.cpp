@@ -135,7 +135,7 @@ int main_box (FILE * outf, int argc, const char ** argv)
     sscanf(argv[4], "%f", &h);
     sscanf(argv[5], "%f", &d);
 
-    unsigned ndivs = 0;
+    unsigned ndivs = 1;
     if (argc > 6)
         sscanf(argv[6], "%u", &ndivs);
 
