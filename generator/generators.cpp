@@ -316,41 +316,53 @@ void gen_cone_write (FILE * outf, struct Cone c)
 {
     const float a = (float) ((2 * M_PI) / (float) c.slices);
     const struct Point O = Point(0, 0, 0);
+    const struct Point C = Point(0, c.height, 0);
     const float st = (float) c.stacks;
 
     for (unsigned i = 0; i < c.slices; i++) {
         const float I = (float) i;
+
+        const float xi = sin(I * a);
+        const float zi = cos(I * a);
+
+        const float xi1 = sin((I + 1) * a);
+        const float zi1 = cos((I + 1) * a);
+
+        struct Point Nsi = Point(0, 0, 0);
+        {
+            /* side vector */
+            struct Point S = C - (c.rad * Point(xi, 0, zi));
+            /* XZ plane vector */
+            struct Point B = c.rad * Point(sin((I * a) + (M_PI / 2)), 0, cos((I * a) + (M_PI / 2)));
+            Nsi = normal(B, S);
+        }
+
+        struct Point Nsi1 = Point(0, 0, 0);
+        {
+            /* side vector */
+            struct Point S = C - (c.rad * Point(xi1, 0, zi1));
+            /* XZ plane vector */
+            struct Point B = c.rad * Point(sin(((I + 1) * a) + (M_PI / 2)), 0, cos(((I + 1) * a) + (M_PI / 2)));
+            Nsi1 = normal(B, S);
+        }
 
         /* draw top mini cone */
         {
             const float R = c.rad / st;
             const float H = c.height * (st - 1) / st;
 
-            const float xi = R * sin(I * a);
-            const float zi = R * cos(I * a);
+            struct Point P2 = R * Point(xi, H, zi);
+            struct Point P3 = R * Point(xi1, H, zi1);
+            struct Point N = normal(P2 - C, P3 - C);
 
-            const float xi1 = R * sin((I + 1) * a);
-            const float zi1 = R * cos((I + 1) * a);
-
-            struct Point P1 = Point(0, c.height, 0);
-            struct Point P2 = Point(xi, H, zi);
-            struct Point P3 = Point(xi1, H, zi1);
-            struct Point N = normal(P2 - P1, P3 - P1);
-
-            gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N, N, N));
+            gen_triangle_write(outf, Triangle(C, P2, P3), Triangle(N, N, N));
         }
 
         /* draw base */
         {
-            const float xi = c.rad * sin(I * a);
-            const float zi = c.rad * cos(I * a);
-
-            const float xi1 = c.rad * sin((I + 1) * a);
-            const float zi1 = c.rad * cos((I + 1) * a);
-
-            struct Point P1 = Point(xi, 0, zi);
+            struct Point P1 = c.rad * Point(xi, 0, zi);
             struct Point P2 = Point(0, 0, 0);
-            struct Point P3 = Point(xi1, 0, zi1);
+            struct Point P3 = c.rad * Point(xi1, 0, zi1);
             const struct Point N = Point(0, -1, 0);
 
             gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N, N, N));
@@ -370,9 +382,10 @@ void gen_cone_write (FILE * outf, struct Cone c)
             const struct Point P2 = Point(r  * sin(I       * a),  y,  r  * cos(I       * a));
             const struct Point P3 = Point(r1 * sin((I + 1) * a),  y1, r1 * cos((I + 1) * a));
             const struct Point P4 = Point(r  * sin((I + 1) * a),  y,  r  * cos((I + 1) * a));
-            const struct Point N = normal(P1 - P2, P4 - P3);
+            const struct Point N12 = normal(P1 - P2, P4 - P3);
+            const struct Point N34 = normal(P1 - P2, P4 - P3);
 
-            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(N, N, N, N));
+            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(Nsi, Nsi, Nsi1, Nsi1));
         }
     }
 }
@@ -413,9 +426,11 @@ void gen_cylinder_write (FILE * outf, struct Cylinder c)
             struct Point P3 = Pi1B + Point(0, y13, 0);
             struct Point P4 = Pi1B + Point(0, y24, 0);
 
-            struct Point Ni = Point(PiB.x, 0, PiB.z);
-            struct Point Ni1 = Point(Pi1B.x, 0, Pi1B.z);
-            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(Ni, Ni, Ni1, Ni1));
+            struct Point Ni = normalize(Point(PiB.x, 0, PiB.z));
+            struct Point Ni1 = normalize(Point(Pi1B.x, 0, Pi1B.z));
+            gen_rectangle_write_nodivs(outf,
+                    Rectangle(P1, P2, P3, P4),
+                    Rectangle(Ni, Ni, Ni1, Ni1));
         }
 
         N = Point(0, 1, 0);
