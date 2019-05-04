@@ -156,9 +156,30 @@ static void gen_rectangle_write_nodivs (FILE * outf, struct Rectangle rect, stru
     gen_triangle_write(outf, Triangle(rect.P3, rect.P2, rect.P4), Triangle(norm.P3, norm.P2, norm.P4));
 }
 
-static struct Point gen_bezier_get_single_point (const struct Point MPM[4][4], float u, float v)
+static struct Point gen_bezier_get_single_point (const struct Point MPM[4][4], float u, float v, struct Point * N)
 {
     struct Point tmp[4];
+
+    for (unsigned j = 0; j < 4; j++)
+        tmp[j] = (3 * u * u * MPM[j][0])
+            + (2 * u * MPM[j][1])
+            + MPM[j][2];
+    struct Point Nu = (v * v * v * tmp[0])
+        + (v * v * tmp[1])
+        + (v * tmp[2])
+        + tmp[3];
+
+    for (unsigned j = 0; j < 4; j++)
+        tmp[j] = (u * u * u * MPM[j][0])
+            + (u * u * MPM[j][1])
+            + (u * MPM[j][2])
+            + MPM[j][3];
+    struct Point Nv = (3 * v * v * tmp[0])
+        + (2 * v * tmp[1])
+        + tmp[2];
+
+    *N = normal(Nu, Nv);
+
     for (unsigned j = 0; j < 4; j++)
         tmp[j] = (u * u * u * MPM[j][0])
             + (u * u * MPM[j][1])
@@ -235,15 +256,15 @@ static void gen_bezier_patch_single (FILE * outf, std::vector<struct Point> cps,
             float v  = ((float) j)     / (4.0 * tessellation);
             float v_ = ((float) j - 1) / (4.0 * tessellation);
 
-            struct Point P1 = gen_bezier_get_single_point(MPM, u,  v_);
-            struct Point P2 = gen_bezier_get_single_point(MPM, u,  v);
-            struct Point P3 = gen_bezier_get_single_point(MPM, u_, v_);
-            struct Point P4 = gen_bezier_get_single_point(MPM, u_, v);
+            struct Point N1 = Point(0, 0, 0);
+            struct Point N2 = Point(0, 0, 0);
+            struct Point N3 = Point(0, 0, 0);
+            struct Point N4 = Point(0, 0, 0);
 
-            struct Point N1 = normal(P3 - P1, P2 - P1);
-            struct Point N2 = normal(P4 - P2, P1 - P2);
-            struct Point N3 = normal(P4 - P3, P1 - P3);
-            struct Point N4 = normal(P3 - P4, P2 - P4);
+            struct Point P1 = gen_bezier_get_single_point(MPM, u,  v_, &N1);
+            struct Point P2 = gen_bezier_get_single_point(MPM, u,  v, &N2);
+            struct Point P3 = gen_bezier_get_single_point(MPM, u_, v_, &N3);
+            struct Point P4 = gen_bezier_get_single_point(MPM, u_, v, &N4);
 
             struct Rectangle R = Rectangle(P1, P2, P3, P4);
             struct Rectangle N = Rectangle(N1, N2, N3, N4);
