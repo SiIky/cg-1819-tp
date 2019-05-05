@@ -169,18 +169,18 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
         }
     }
 
-    for (std::string mname : group->models) {
-        struct model model = scene->models[mname];
+    for (struct model model : group->models) {
+        struct model_vbo mvbo = scene->models[model.fname];
 
         /* bind and draw the triangles */
-        glBindBuffer(GL_ARRAY_BUFFER, model.v_id);
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
         glVertexPointer(3, GL_FLOAT, 0, NULL);
 
         /* bind and draw normals */
-        glBindBuffer(GL_ARRAY_BUFFER, model.n_id);
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
         glNormalPointer(GL_FLOAT, 0, 0);
 
-        glDrawArrays(GL_TRIANGLES, 0, model.length);
+        glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
     }
 
     for (auto subgroup : group->subgroups) {
@@ -220,65 +220,93 @@ void sc_draw (struct scene * scene, unsigned int elapsed, bool draw_curves)
     }
 }
 
-static void sc_load_model (const char * fname, struct model * model)
+#define maybe(atr, def) ((atr) ? atr.as_float() : (def))
+
+static void sc_load_model (pugi::xml_node node, struct scene * scene, struct group * group)
 {
-    FILE * inf = fopen(fname, "r");
-    assert(inf);
-    std::vector<struct Point> vec;
-    std::vector<struct Point> norm;
-    gen_model_read(inf, &vec, &norm);
-    fclose(inf);
+	struct textura_ou_merdas tom;
 
-    model->length = vec.size();
-    float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));
+#define has_(T, I) \
+	has_ ## T = node.attribute(I "R") || node.attribute(I "G") || node.attribute(I "B")
+	tom.has_(amb, "amb");
+	tom.has_(diff, "diff");
+	tom.has_(spec, "spec");
+	tom.has_(emi, "emi");
 
-    {
-        unsigned i = 0;
-        for (struct Point p : vec) {
-            rafar[i++] = p.x;
-            rafar[i++] = p.y;
-            rafar[i++] = p.z;
-        }
+#define read_(T, I) \
+	if (tom.has_ ## T) do { \
+		tom.T.x = maybe(node.attribute(I "R"), 0); \
+		tom.T.y = maybe(node.attribute(I "G"), 0); \
+		tom.T.z = maybe(node.attribute(I "B"), 0); \
+	} while (0)
+	read_(amb, "amb");
+	read_(diff, "diff");
+	read_(spec, "spec");
+	read_(emi, "emi");
 
-        glGenBuffers(1, &model->v_id);
-        glBindBuffer(GL_ARRAY_BUFFER, model->v_id);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
-    }
+	if (node.attribute("texture")) {
+		tom.has_text = true;
+		tom.text = node.attribute("texture").value();
+	}
 
-    {
-        unsigned i = 0;
-        for (struct Point p : norm) {
-            rafar[i++] = p.x;
-            rafar[i++] = p.y;
-            rafar[i++] = p.z;
-        }
+	const char * fname = node.attribute("FILE").value();
+	struct model_vbo mvbo;
 
-        glGenBuffers(1, &model->n_id);
-        glBindBuffer(GL_ARRAY_BUFFER, model->n_id);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * model->length * 3, rafar, GL_STATIC_DRAW);
-    }
+	if (scene->models.count(fname)) {
+		mvbo = scene->models[fname];
+	} else {
+		FILE * inf = fopen(fname, "r");
+		assert(inf);
+		std::vector<struct Point> vec;
+		std::vector<struct Point> norm;
+		gen_model_read(inf, &vec, &norm);
+		fclose(inf);
 
-    free(rafar);
+		mvbo.length = vec.size();
+		float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));
+
+		unsigned i = 0;
+		for (struct Point p : vec) {
+			rafar[i++] = p.x;
+			rafar[i++] = p.y;
+			rafar[i++] = p.z;
+		}
+
+		glGenBuffers(1, &mvbo.v_id);
+		glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 3, rafar, GL_STATIC_DRAW);
+
+		i = 0;
+		for (struct Point p : norm) {
+			rafar[i++] = p.x;
+			rafar[i++] = p.y;
+			rafar[i++] = p.z;
+		}
+
+		glGenBuffers(1, &mvbo.n_id);
+		glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 3, rafar, GL_STATIC_DRAW);
+
+		free(rafar);
+	}
+
+	mvbo.vector_de_textura_ou_merdas.push_back(tom);
+	scene->models[fname] = mvbo;
+
+	struct model model;
+	model.fname = fname;
+	model.id = mvbo.vector_de_textura_ou_merdas.size() - 1;
+	group->models.push_back(model);
 }
 
 static void sc_load_models (pugi::xml_node node, struct scene * scene, struct group * group)
 {
     for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling()) {
         if (strcmp("model", trans.name()) == 0) {
-            const char * fname = trans.attribute("FILE").value();
-
-            if (!scene->models.count(fname)) {
-                struct model model;
-                sc_load_model(fname, &model);
-                scene->models[fname] = model;
-            }
-
-            group->models.push_back(fname);
+            sc_load_model(trans, scene, group);
         }
     }
 }
-
-#define maybe(atr, def) ((atr) ? atr.as_float() : (def))
 
 static void sc_load_rotate (pugi::xml_node node, struct scene * scene, struct group * group)
 {

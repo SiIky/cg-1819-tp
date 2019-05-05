@@ -41,13 +41,31 @@ struct gt {
     enum gt_type type;
 };
 
+struct model {
+    std::string fname;
+    unsigned id;
+};
+
 struct group {
     std::vector<struct gt>     gt;
-    std::vector<std::string>   models;
+    std::vector<struct model>  models;
     std::vector<struct group*> subgroups;
 };
 
-struct model {
+struct textura_ou_merdas {
+    bool has_amb;
+    bool has_diff;
+    bool has_emi;
+    bool has_spec;
+    bool has_text;
+    std::string text;
+    struct Point amb;
+    struct Point diff;
+    struct Point emi;
+    struct Point spec;
+};
+
+struct model_vbo {
     /** Verteces VBO ID */
     GLuint v_id;
 
@@ -56,6 +74,8 @@ struct model {
 
     /** Vertex count */
     size_t length;
+
+    std::vector<struct textura_ou_merdas> vector_de_textura_ou_merdas;
 };
 
 enum lt_type {
@@ -72,7 +92,7 @@ struct light {
 struct scene {
     std::vector<struct light*>          lights;
     std::vector<struct group*>          groups;
-    std::map<std::string, struct model> models;
+    std::map<std::string, struct model_vbo> models;
 };
 
 bool sc_load_file (const char * path, struct scene * scene);
