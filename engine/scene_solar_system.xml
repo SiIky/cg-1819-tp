@@ -1,6 +1,9 @@
 <scene>
+    <lights>
+        <light TYPE="POINT" X="0" Y="0" Z="0" R="1" G="0.63921568627451" B="0" />
+    </lights>
     <group>
-        <scale X="10" Y="10" Z="10"/>
+        <scale X="10" Y="10" Z="10" ambR="1" ambG="0.63921568627451" ambB="0" emiR="1" emiG="0.63921568627451" emiB="0" />
         <!-- Sol -->
         <group>
             <rotate TIME="20" Y="1"/>

@@ -64,7 +64,8 @@ static int timebase = 0;
 static int frame = 0;
 static struct scene scene;
 
-static bool draw_curves = false;
+static bool draw_curves = true; /* draw Catmull-Rom curves? */
+static bool draw_lights = false; /* draw static lights every frame? */
 
 void renderScene (void)
 {
@@ -102,7 +103,7 @@ void renderScene (void)
     unsigned elapsed_last_frame = elapsed_program_start - timebase;
 
     glColor3ub(100, 100, 100);
-    sc_draw(&scene, elapsed_program_start, draw_curves);
+    sc_draw(&scene, elapsed_program_start, draw_curves, draw_lights);
 
     // End of frame
     glutSwapBuffers();
@@ -133,7 +134,8 @@ void processKeys (unsigned char c, int xx, int yy)
         case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
 
-        case '~': draw_curves = !draw_curves;
+        case '~': draw_curves = !draw_curves; break;
+        /* TODO: Key to change `draw_lights` */
     }
 }
 
@@ -181,6 +183,8 @@ int main (int argc, char **argv)
 
     if (!sc_load_file(argv[1], &scene))
         return !0;
+
+    sc_draw_lights(&scene); /* draw static ligts */
 
     // enter GLUT's main cycle
     glutMainLoop();

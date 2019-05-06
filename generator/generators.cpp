@@ -132,8 +132,8 @@ static void mult_MPM (const float M[4][4], const struct Point P[4][4], struct Po
 static inline void gen_point_write (FILE * outf, struct Point p, struct Point norm)
 {
     fprintf(outf,
-            "%f %f %f "
-            "%f %f %f\n",
+            "%a %a %a "
+            "%a %a %a\n",
             p.x, p.y, p.z,
             norm.x, norm.y, norm.z
            );

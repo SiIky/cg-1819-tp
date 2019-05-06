@@ -153,6 +153,39 @@ static void sc_draw_cm_curve (const struct gt * gt)
     } glEnd();
 }
 
+static void sc_draw_model (struct scene * scene, struct model * model)
+{
+    struct model_vbo mvbo = scene->models[model->fname];
+    struct textura_ou_merdas tom = mvbo.vector_de_textura_ou_merdas[model->id];
+
+    /* FIXME: Colors should be applied only to the current model */
+#define draw_(T, GL) \
+    if (tom.has_ ## T) do { \
+        GLfloat color[4] = {tom.T.x, tom.T.y, tom.T.z, 1}; \
+        glMaterialfv(GL_FRONT, GL, color);                 \
+    } while (0)
+    draw_(amb, GL_AMBIENT);
+    draw_(diff, GL_DIFFUSE);
+    draw_(emi, GL_EMISSION);
+    draw_(spec, GL_SPECULAR);
+#undef draw_
+
+    /* TODO: Draw texture */
+    if (tom.has_text) {
+    }
+
+    /* bind and draw the triangles */
+    glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
+    glVertexPointer(3, GL_FLOAT, 0, NULL);
+
+    /* bind and draw normals */
+    glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
+    glNormalPointer(GL_FLOAT, 0, 0);
+
+    glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
+}
+
+static void sc_draw_groups (struct scene * scene, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves);
 static void sc_draw_group (struct scene * scene, struct group * group, unsigned int elapsed, bool draw_curves)
 {
     for (struct gt gt : group->gt) {
@@ -169,23 +202,17 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
         }
     }
 
-    for (struct model model : group->models) {
-        struct model_vbo mvbo = scene->models[model.fname];
+    for (struct model model : group->models)
+        sc_draw_model(scene, &model);
 
-        /* bind and draw the triangles */
-        glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
-        glVertexPointer(3, GL_FLOAT, 0, NULL);
+    sc_draw_groups(scene, group->subgroups, elapsed, draw_curves);
+}
 
-        /* bind and draw normals */
-        glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
-        glNormalPointer(GL_FLOAT, 0, 0);
-
-        glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
-    }
-
-    for (auto subgroup : group->subgroups) {
+static void sc_draw_groups (struct scene * scene, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves)
+{
+    for (struct group * group : groups) {
         glPushMatrix();
-        sc_draw_group(scene, subgroup, elapsed, draw_curves);
+        sc_draw_group(scene, group, elapsed, draw_curves);
         glPopMatrix();
     }
 }
@@ -200,24 +227,25 @@ static void sc_draw_light (struct scene * scene, struct light * light, unsigned 
         2:
         0;
     GLfloat cenas[4] = { light->pos.x, light->pos.y, light->pos.z, w, };
-    GLfloat colour[4] = { 1, 1, 1, 0 };
+    GLfloat colour[4] = { light->color.x, light->color.y, light->color.z, 1, };
+    /* Assume `GL_LIGHT[0-7]` were defined sequentially */
     glLightfv(GL_LIGHT0 + i, GL_POSITION, cenas);
     glLightfv(GL_LIGHT0 + i, GL_AMBIENT, colour);
     glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, colour);
 }
 
-void sc_draw (struct scene * scene, unsigned int elapsed, bool draw_curves)
+void sc_draw_lights (struct scene * scene)
 {
     unsigned i = 0;
-    for (struct light * light : scene->lights) {
+    for (struct light * light : scene->lights)
         sc_draw_light(scene, light, i++);
-    }
+}
 
-    for (struct group * group : scene->groups) {
-        glPushMatrix();
-        sc_draw_group(scene, group, elapsed, draw_curves);
-        glPopMatrix();
-    }
+void sc_draw (struct scene * scene, unsigned int elapsed, bool draw_curves, bool draw_ligts)
+{
+    if (draw_ligts)
+        sc_draw_lights(scene);
+    sc_draw_groups(scene, scene->groups, elapsed, draw_curves);
 }
 
 #define maybe(atr, def) ((atr) ? atr.as_float() : (def))
@@ -232,6 +260,7 @@ static void sc_load_model (pugi::xml_node node, struct scene * scene, struct gro
 	tom.has_(diff, "diff");
 	tom.has_(spec, "spec");
 	tom.has_(emi, "emi");
+#undef has_
 
 #define read_(T, I) \
 	if (tom.has_ ## T) do { \
@@ -243,11 +272,11 @@ static void sc_load_model (pugi::xml_node node, struct scene * scene, struct gro
 	read_(diff, "diff");
 	read_(spec, "spec");
 	read_(emi, "emi");
+#undef read_
 
-	if (node.attribute("texture")) {
-		tom.has_text = true;
+	tom.has_text = node.attribute("texture");
+	if (tom.has_text)
 		tom.text = node.attribute("texture").value();
-	}
 
 	const char * fname = node.attribute("FILE").value();
 	struct model_vbo mvbo;
@@ -301,11 +330,9 @@ static void sc_load_model (pugi::xml_node node, struct scene * scene, struct gro
 
 static void sc_load_models (pugi::xml_node node, struct scene * scene, struct group * group)
 {
-    for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling()) {
-        if (strcmp("model", trans.name()) == 0) {
+    for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling())
+        if (strcmp("model", trans.name()) == 0)
             sc_load_model(trans, scene, group);
-        }
-    }
 }
 
 static void sc_load_rotate (pugi::xml_node node, struct scene * scene, struct group * group)
@@ -397,11 +424,19 @@ static void sc_load_light (pugi::xml_node node, struct scene * scene, unsigned i
         return;
 
     struct light * light = (struct light*) calloc(1, sizeof(struct light));
-    float x = maybe(node.attribute("X"), 0);
-    float y = maybe(node.attribute("Y"), 0);
-    float z = maybe(node.attribute("Z"), 0);
 
-    light->pos = Point(x, y, z);
+    light->color = Point(
+            maybe(node.attribute("R"), 0),
+            maybe(node.attribute("G"), 0),
+            maybe(node.attribute("B"), 0)
+            );
+
+    light->pos = Point(
+            maybe(node.attribute("X"), 0),
+            maybe(node.attribute("Y"), 0),
+            maybe(node.attribute("Z"), 0)
+            );
+
     light->type = (strcmp("POINT", node.attribute("TYPE").value()) == 0) ?
         LT_POINT:
         (strcmp("DIR", node.attribute("TYPE").value()) == 0) ?

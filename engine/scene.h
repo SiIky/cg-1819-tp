@@ -86,6 +86,7 @@ enum lt_type {
 
 struct light {
     enum lt_type type;
+    struct Point color;
     struct Point pos;
 };
 
@@ -95,7 +96,8 @@ struct scene {
     std::map<std::string, struct model_vbo> models;
 };
 
-bool sc_load_file (const char * path, struct scene * scene);
-void sc_draw      (struct scene * scene, unsigned int elapsed, bool draw_curves);
+bool sc_load_file   (const char * path, struct scene * scene);
+void sc_draw        (struct scene * scene, unsigned int elapsed, bool draw_curves, bool draw_ligts);
+void sc_draw_lights (struct scene * scene);
 
 #endif /* _SCENE_H */
