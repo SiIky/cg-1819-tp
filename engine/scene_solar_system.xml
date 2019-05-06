@@ -1,9 +1,9 @@
 <scene>
     <lights>
-        <light TYPE="POINT" X="0" Y="0" Z="0" R="1" G="0.63921568627451" B="0" />
+        <light TYPE="POINT" X="0" Y="0" Z="0" R="1" G="0.63921568627451" B="0"/>
     </lights>
     <group>
-        <scale X="10" Y="10" Z="10" ambR="1" ambG="0.63921568627451" ambB="0" emiR="1" emiG="0.63921568627451" emiB="0" />
+        <scale X="10" Y="10" Z="10" ambR="1" ambG="0.63921568627451" ambB="0" emiR="1" emiG="0.63921568627451" emiB="0"/>
         <!-- Sol -->
         <group>
             <rotate TIME="20" Y="1"/>
@@ -12,159 +12,158 @@
             </models>
         </group>
         <!-- Mercurio -->
-	   <group>
-		<translate X = "-5">
-		</translate>
         <group>
-            <translate TIME="30">
-                <point X="10"/>
-                <point Z="-10"/>
-                <point X="-10"/>
-                <point Z="10"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.04" Y="0.04" Z="0.04"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Venus -->
-        <group>
-            <translate TIME="50">
-                <point Z="13"/>
-                <point X="-13"/>
-                <point Z="-13"/>
-                <point X="13"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.05" Y="0.05" Z="0.05"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Terra -->
-        <group>
-            <translate TIME="60">
-                <point X="-16"/>
-                <point Z="16"/>
-                <point X="16"/>
-                <point Z="-16"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.05" Y="0.05" Z="0.05"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
+            <translate X = "-5"/>
             <group>
-                <translate Z="20" />
-                <scale X="0.3" Y="0.3" Z="0.3"/>
+                <translate TIME="30">
+                    <point X="10"/>
+                    <point Z="-10"/>
+                    <point X="-10"/>
+                    <point Z="10"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.04" Y="0.04" Z="0.04"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
             </group>
+            <!-- Venus -->
+            <group>
+                <translate TIME="50">
+                    <point Z="13"/>
+                    <point X="-13"/>
+                    <point Z="-13"/>
+                    <point X="13"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.05" Y="0.05" Z="0.05"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+            </group>
+            <!-- Terra -->
+            <group>
+                <translate TIME="60">
+                    <point X="-16"/>
+                    <point Z="16"/>
+                    <point X="16"/>
+                    <point Z="-16"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.05" Y="0.05" Z="0.05"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+                <group>
+                    <translate Z="20" />
+                    <scale X="0.3" Y="0.3" Z="0.3"/>
+                    <models>
+                        <model FILE="../assets/sphere.3d"/>
+                    </models>
+                </group>
 
+            </group>
+            <!-- Marte -->
+            <group>
+                <translate TIME="65">
+                    <point Z="-19"/>
+                    <point X="-19"/>
+                    <point Z="19"/>
+                    <point X="19"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.04" Y="0.04" Z="0.04"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+            </group>
+            <!-- Jupiter -->
+            <group>
+                <translate TIME="170">
+                    <point X="25"/>
+                    <point Z="-25"/>
+                    <point X="-25"/>
+                    <point Z="25"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.2" Y="0.2" Z="0.2"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+            </group>
+            <!-- Saturno -->
+            <group>
+                <translate TIME="190">
+                    <point Z="30"/>
+                    <point X="30"/>
+                    <point Z="-30"/>
+                    <point X="-30"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.15" Y="0.15" Z="0.15"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+            </group>
+            <!-- Uranos -->
+            <group>
+                <translate TIME="210">
+                    <point X="-40"/>
+                    <point Z="40"/>
+                    <point X="40"/>
+                    <point Z="-40"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.095" Y="0.095" Z="0.095"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+            </group>
+            <!-- Neptuno -->
+            <group>
+                <translate TIME="230">
+                    <point Z="-50"/>
+                    <point X="-50"/>
+                    <point Z="50"/>
+                    <point X="50"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.095" Y="0.095" Z="0.095"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+            </group>
+            <!-- Pluto -->
+            <group>
+                <translate TIME="270">
+                    <point X="60"/>
+                    <point Z="-60"/>
+                    <point X="-60"/>
+                    <point Z="60"/>
+                </translate>
+                <rotate TIME="15" Y="1"/>
+                <scale X="0.04" Y="0.04" Z="0.04"/>
+                <models>
+                    <model FILE="../assets/sphere.3d"/>
+                </models>
+            </group>
+            <!-- Commet -->
+            <group>
+                <translate TIME="30">
+                    <point X="15"/>
+                    <point Z="-11"/>
+                    <point X="-25" Z="-8"/>
+                    <point X="-45"/>
+                    <point X="-25" Z="8"/>
+                    <point Z="11"/>
+                </translate>
+                <scale X="0.2" Y="0.2" Z="0.2"/>
+                <rotate ANGLE="-90" X="1"/>
+                <rotate TIME="100" X="1" Y="1" Z="1"/>
+                <models>
+                    <model FILE="../assets/teapot.3d"/>
+                </models>
+            </group>
         </group>
-        <!-- Marte -->
-        <group>
-            <translate TIME="65">
-                <point Z="-19"/>
-                <point X="-19"/>
-                <point Z="19"/>
-                <point X="19"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.04" Y="0.04" Z="0.04"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Jupiter -->
-        <group>
-            <translate TIME="170">
-                <point X="25"/>
-                <point Z="-25"/>
-                <point X="-25"/>
-                <point Z="25"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.2" Y="0.2" Z="0.2"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Saturno -->
-        <group>
-            <translate TIME="190">
-                <point Z="30"/>
-                <point X="30"/>
-                <point Z="-30"/>
-                <point X="-30"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.15" Y="0.15" Z="0.15"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Uranos -->
-        <group>
-            <translate TIME="210">
-                <point X="-40"/>
-                <point Z="40"/>
-                <point X="40"/>
-                <point Z="-40"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.095" Y="0.095" Z="0.095"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Neptuno -->
-        <group>
-            <translate TIME="230">
-                <point Z="-50"/>
-                <point X="-50"/>
-                <point Z="50"/>
-                <point X="50"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.095" Y="0.095" Z="0.095"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Pluto -->
-        <group>
-            <translate TIME="270">
-                <point X="60"/>
-                <point Z="-60"/>
-                <point X="-60"/>
-                <point Z="60"/>
-            </translate>
-            <rotate TIME="15" Y="1"/>
-            <scale X="0.04" Y="0.04" Z="0.04"/>
-            <models>
-                <model FILE="../assets/sphere.3d"/>
-            </models>
-        </group>
-        <!-- Commet -->
-        <group>
-            <translate TIME="30">
-                <point X="15"/>
-                <point Z="-11"/>
-                <point X="-25" Z="-8"/>
-                <point X="-45"/>
-                <point X="-25" Z="8"/>
-                <point Z="11"/>
-            </translate>
-            <scale X="0.2" Y="0.2" Z="0.2"/>
-            <rotate ANGLE="-90" X="1"/>
-            <rotate TIME="100" X="1" Y="1" Z="1"/>
-            <models>
-                <model FILE="../assets/teapot.3d"/>
-            </models>
-        </group>
-	  </group>
     </group>
 </scene>
