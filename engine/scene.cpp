@@ -244,17 +244,19 @@ void sc_draw_lights (const struct scene * scene)
         sc_draw_light(scene, light, i++);
 }
 
-void sc_draw (struct scene * scene, unsigned elapsed, bool draw_curves, bool draw_ligts)
+void sc_draw (struct scene * scene, unsigned elapsed, bool draw_curves, bool draw_lights)
 {
-    if (draw_ligts)
+    if (draw_lights)
         sc_draw_lights(scene);
     sc_draw_groups(scene, scene->groups, elapsed, draw_curves);
 }
 
-static unsigned sc_load_texture (struct scene * scene, std::string fname, std::map<std::string, unsigned> * texts)
+static bool sc_load_texture (struct scene * scene, std::string fname, std::map<std::string, unsigned> * texts, unsigned * ret)
 {
+    *ret = 0;
+
     if (texts->count(fname))
-        return (*texts)[fname];
+        return (*ret = (*texts)[fname]), true;
 
     ilEnable(IL_ORIGIN_SET);
     ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
@@ -262,12 +264,13 @@ static unsigned sc_load_texture (struct scene * scene, std::string fname, std::m
     unsigned t = 0;
     ilGenImages(1, &t);
     ilBindImage(t);
-    ilLoadImage(fname.c_str());
+    if (!ilLoadImage(fname.c_str()))
+        return false;
+
     ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
 
-    unsigned ret = 0;
-    glGenTextures(1, &ret);
-    glBindTexture(GL_TEXTURE_2D, ret);
+    glGenTextures(1, ret);
+    glBindTexture(GL_TEXTURE_2D, *ret);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -276,13 +279,14 @@ static unsigned sc_load_texture (struct scene * scene, std::string fname, std::m
     unsigned w = ilGetInteger(IL_IMAGE_WIDTH);
     unsigned h = ilGetInteger(IL_IMAGE_HEIGHT);
     unsigned char * data = ilGetData();
+    assert(data);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     /* TODO: Load and bind texture points */
 
-    return ret;
+    return true;
 }
 
 static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, const char * fname)
@@ -362,9 +366,8 @@ static void sc_load_model (pugi::xml_node node, struct scene * scene, struct gro
     read_(emi,  "emi");
 #undef read_
 
-    tom.has_text = node.attribute("texture");
-    if (tom.has_text)
-        tom.text = sc_load_texture(scene, node.attribute("texture").value(), texts);
+    tom.has_text = node.attribute("texture")
+        && sc_load_texture(scene, node.attribute("texture").value(), texts, &tom.text);
 
     const char * fname = node.attribute("FILE").value();
     struct model model = sc_load_3d_model(scene, tom, fname);

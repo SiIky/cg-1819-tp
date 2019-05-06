@@ -122,6 +122,7 @@ void renderScene (void)
 
 void processKeys (unsigned char c, int xx, int yy)
 {
+#define toggle(opt, key) case key: opt = !opt; break
     switch (c) {
         case 'w': b += 1; break;
         case 'a': a -= 1; break;
@@ -135,8 +136,8 @@ void processKeys (unsigned char c, int xx, int yy)
         case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
 
-        case '~': draw_curves = !draw_curves; break;
-        /* TODO: Key to change `draw_lights` */
+        toggle(draw_curves, '~');
+        toggle(draw_lights, '$');
     }
 }
 
