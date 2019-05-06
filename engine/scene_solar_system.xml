@@ -1,14 +1,14 @@
 <scene>
     <lights>
-        <light TYPE="POINT" X="0" Y="0" Z="0" R="1" G="0.63921568627451" B="0"/>
+        <light TYPE="POINT" X="0" Y="0" Z="0" R="0.8" G="0.8" B="0.8"/>
     </lights>
     <group>
-        <scale X="10" Y="10" Z="10" ambR="1" ambG="0.63921568627451" ambB="0" emiR="1" emiG="0.63921568627451" emiB="0"/>
+        <scale X="10" Y="10" Z="10"/>
         <!-- Sol -->
         <group>
             <rotate TIME="20" Y="1"/>
             <models>
-                <model FILE="../assets/sphere.3d"/>
+                <model FILE="../assets/sphere.3d" emiR="1" emiG="0.63921568627451" emiB="0"/>
             </models>
         </group>
         <!-- Mercurio -->
@@ -16,14 +16,14 @@
             <translate X = "-3"/>
             <group>
                 <translate TIME="30">
-                    <point X="10"/>	
-		    <point X="7.07" Z="-7.07"/>		
+                    <point X="10"/>
+                    <point X="7.07" Z="-7.07"/>
                     <point Z="-10"/>
-		    <point X="-7.07" Z="-7.07"/>	
+                    <point X="-7.07" Z="-7.07"/>
                     <point X="-10"/>
-		    <point X="-7.07" Z="7.07"/>
+                    <point X="-7.07" Z="7.07"/>
                     <point Z="10"/>
-		    <point X="7.07" Z="7.07"/>
+                    <point X="7.07" Z="7.07"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.04" Y="0.04" Z="0.04"/>
@@ -35,13 +35,13 @@
             <group>
                 <translate TIME="50">
                     <point Z="13"/>
-		    <point Z="9.19" X ="-9.19"/>
+                    <point Z="9.19" X ="-9.19"/>
                     <point X="-13"/>
-		    <point Z="-9.19" X ="-9.19"/>	
+                    <point Z="-9.19" X ="-9.19"/>
                     <point Z="-13"/>
-		    <point Z="-9.19" X ="9.19"/>
+                    <point Z="-9.19" X ="9.19"/>
                     <point X="13"/>
-		    <point Z="9.19" X ="9.19"/>
+                    <point Z="9.19" X ="9.19"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.05" Y="0.05" Z="0.05"/>
@@ -53,13 +53,13 @@
             <group>
                 <translate TIME="60">
                     <point X="-16"/>
-		    <point Z="11.31" X ="-11.31"/>
+                    <point Z="11.31" X ="-11.31"/>
                     <point Z="16"/>
-		    <point Z="11.31" X ="11.31"/>
+                    <point Z="11.31" X ="11.31"/>
                     <point X="16"/>
-		    <point Z="-11.31" X ="11.31"/>
+                    <point Z="-11.31" X ="11.31"/>
                     <point Z="-16"/>
-		    <point Z="-11.31" X ="-11.31"/>
+                    <point Z="-11.31" X ="-11.31"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.05" Y="0.05" Z="0.05"/>
@@ -79,13 +79,13 @@
             <group>
                 <translate TIME="65">
                     <point Z="-19"/>
-		    <point Z="-13.43" X ="-13.43"/>
+                    <point Z="-13.43" X ="-13.43"/>
                     <point X="-19"/>
-		    <point Z="13.43" X ="-13.43"/>
+                    <point Z="13.43" X ="-13.43"/>
                     <point Z="19"/>
-		    <point Z="13.43" X ="13.43"/>
+                    <point Z="13.43" X ="13.43"/>
                     <point X="19"/>
-		    <point Z="-13.43" X ="13.43"/>
+                    <point Z="-13.43" X ="13.43"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.04" Y="0.04" Z="0.04"/>
@@ -97,13 +97,13 @@
             <group>
                 <translate TIME="170">
                     <point X="25"/>
-		    <point Z="-17.67" X ="17.67"/>
+                    <point Z="-17.67" X ="17.67"/>
                     <point Z="-25"/>
-		    <point Z="-17.67" X ="-17.67"/>
+                    <point Z="-17.67" X ="-17.67"/>
                     <point X="-25"/>
-		    <point Z="17.67" X ="-17.67"/>
+                    <point Z="17.67" X ="-17.67"/>
                     <point Z="25"/>
-		    <point Z="17.67" X ="17.67"/>
+                    <point Z="17.67" X ="17.67"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.2" Y="0.2" Z="0.2"/>
@@ -115,13 +115,13 @@
             <group>
                 <translate TIME="190">
                     <point Z="30"/>
-		    <point Z="21.21" X ="21.21"/>
+                    <point Z="21.21" X ="21.21"/>
                     <point X="30"/>
-		    <point Z="-21.21" X ="21.21"/>
+                    <point Z="-21.21" X ="21.21"/>
                     <point Z="-30"/>
-		    <point Z="-21.21" X ="-21.21"/>
+                    <point Z="-21.21" X ="-21.21"/>
                     <point X="-30"/>
-		    <point Z="21.21" X ="-21.21"/>
+                    <point Z="21.21" X ="-21.21"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.15" Y="0.15" Z="0.15"/>
@@ -133,13 +133,13 @@
             <group>
                 <translate TIME="210">
                     <point X="-40"/>
-		    <point Z="28.28" X ="-28.28"/>
+                    <point Z="28.28" X ="-28.28"/>
                     <point Z="40"/>
-		    <point Z="28.28" X ="28.28"/>
+                    <point Z="28.28" X ="28.28"/>
                     <point X="40"/>
-		    <point Z="-28.28" X ="28.28"/>
+                    <point Z="-28.28" X ="28.28"/>
                     <point Z="-40"/>
-		    <point Z="-28.28" X ="-28.28"/>
+                    <point Z="-28.28" X ="-28.28"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.095" Y="0.095" Z="0.095"/>
@@ -151,13 +151,13 @@
             <group>
                 <translate TIME="230">
                     <point Z="-50"/>
-		    <point Z="-35.35" X ="-35.35"/>
+                    <point Z="-35.35" X ="-35.35"/>
                     <point X="-50"/>
-		    <point Z="35.35" X ="-35.35"/>
+                    <point Z="35.35" X ="-35.35"/>
                     <point Z="50"/>
-		    <point Z="35.35" X ="35.35"/>
+                    <point Z="35.35" X ="35.35"/>
                     <point X="50"/>
-		    <point Z="-35.35" X ="35.35"/>
+                    <point Z="-35.35" X ="35.35"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.095" Y="0.095" Z="0.095"/>
@@ -169,13 +169,13 @@
             <group>
                 <translate TIME="270">
                     <point X="60"/>
-		    <point Z="-42.42" X ="42.42"/>
+                    <point Z="-42.42" X ="42.42"/>
                     <point Z="-60"/>
-		    <point Z="-42.42" X ="-42.42"/>
+                    <point Z="-42.42" X ="-42.42"/>
                     <point X="-60"/>
-		    <point Z="42.42" X ="-42.42"/>
+                    <point Z="42.42" X ="-42.42"/>
                     <point Z="60"/>
-		    <point Z="42.42" X ="42.42"/>
+                    <point Z="42.42" X ="42.42"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
                 <scale X="0.04" Y="0.04" Z="0.04"/>
@@ -197,7 +197,7 @@
                 <rotate ANGLE="-90" X="1"/>
                 <rotate TIME="100" X="1" Y="1" Z="1"/>
                 <models>
-                    <model FILE="../assets/teapot.3d"/>
+                    <model FILE="../assets/teapot.3d" diffR="1" diffG="0.63921568627451" diffB="0"/>
                 </models>
             </group>
         </group>

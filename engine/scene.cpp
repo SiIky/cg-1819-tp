@@ -61,7 +61,7 @@ static void sc_draw_translate_anim (struct gt * gt, unsigned int elapsed)
     glTranslatef(pos.x,pos.y,pos.z);
 }
 
-static void mult_matrix_vector (float *m, float *v, float *res)
+static void mult_matrix_vector (const float m[16], const float v[4], float res[4])
 {
     for (int j = 0; j < 4; j++) {
         res[j] = 0;
@@ -74,7 +74,7 @@ static void mult_matrix_vector (float *m, float *v, float *res)
 static void get_catmull_rom_point (float t, struct Point p0, struct Point p1, struct Point p2, struct Point p3, struct Point * pos, struct Point * deriv)
 {
     // catmull-rom matrix
-    float m[16] = {
+    const float m[16] = {
         -0.5f, 1.5f,  -1.5f, 0.5f,
         1.0f,  -2.5f, 2.0f,  -0.5f,
         -0.5f, 0.0f,  0.5f,  0.0f,
@@ -83,11 +83,11 @@ static void get_catmull_rom_point (float t, struct Point p0, struct Point p1, st
 
 #define cenas(f) \
     do { \
-        float A[4];                                   \
-        float P[4] = { p0.f, p1.f, p2.f, p3.f };      \
-        mult_matrix_vector(m, P, A);                  \
-        pos->f = t*t*t*A[0] + t*t*A[1]+t*A[2] + A[3]; \
-        deriv->f = 3*t*t*A[0] + 2*t*A[1]+A[2];        \
+        float A[4];                                     \
+        const float P[4] = { p0.f, p1.f, p2.f, p3.f };  \
+        mult_matrix_vector(m, P, A);                    \
+        pos->f = t*t*t*A[0] + t*t*A[1] + t*A[2] + A[3]; \
+        deriv->f = 3*t*t*A[0] + 2*t*A[1] + A[2];        \
     } while(0)
 
     cenas(x);
@@ -121,14 +121,14 @@ static struct Point cross (struct Point a, struct Point b)
             );
 }
 
-static float length (struct Point v)
+static float norm (struct Point v)
 {
     return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }
 
 static struct Point normalize (struct Point p)
 {
-    float l = length(p);
+    float l = norm(p);
     return Point(p.x / l, p.y / l, p.z / l);
 }
 
@@ -155,10 +155,10 @@ static void sc_draw_cm_curve (const struct gt * gt)
 
 static void sc_draw_model (struct scene * scene, struct model * model)
 {
+    glPushAttrib(GL_LIGHTING_BIT);
     struct model_vbo mvbo = scene->models[model->fname];
     struct textura_ou_merdas tom = mvbo.vector_de_textura_ou_merdas[model->id];
 
-    /* FIXME: Colors should be applied only to the current model */
 #define draw_(T, GL) \
     if (tom.has_ ## T) do { \
         GLfloat color[4] = {tom.T.x, tom.T.y, tom.T.z, 1}; \
@@ -183,6 +183,7 @@ static void sc_draw_model (struct scene * scene, struct model * model)
     glNormalPointer(GL_FLOAT, 0, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
+    glPopAttrib();
 }
 
 static void sc_draw_groups (struct scene * scene, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves);
@@ -190,12 +191,12 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
 {
     for (struct gt gt : group->gt) {
         switch (gt.type) {
-            case GT_ROTATE:         sc_draw_rotate(&gt);                  break;
-            case GT_ROTATE_ANIM:    sc_draw_rotate_anim(&gt, elapsed);    break;
-            case GT_SCALE:          sc_draw_scale(&gt);                   break;
-            case GT_TRANSLATE:      sc_draw_translate(&gt);               break;
-            case GT_TRANSLATE_ANIM:
-                                    if (draw_curves) sc_draw_cm_curve(&gt);
+            case GT_ROTATE:         sc_draw_rotate(&gt); break;
+            case GT_ROTATE_ANIM:    sc_draw_rotate_anim(&gt, elapsed); break;
+            case GT_SCALE:          sc_draw_scale(&gt); break;
+            case GT_TRANSLATE:      sc_draw_translate(&gt); break;
+            case GT_TRANSLATE_ANIM: if (draw_curves)
+                                        sc_draw_cm_curve(&gt);
                                     sc_draw_translate_anim(&gt, elapsed);
                                     break;
             default: UNREACHABLE();

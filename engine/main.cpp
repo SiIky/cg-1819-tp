@@ -32,7 +32,6 @@ void changeSize (int w, int h)
 
     // compute window's aspect ratio
     float ratio = w * 1.0 / h;
-    gluPerspective(45.0f, ratio, 1.0f, 100000000000000000.0f);
     // Set the projection matrix as current
     glMatrixMode(GL_PROJECTION);
     // Load Identity Matrix
@@ -42,7 +41,7 @@ void changeSize (int w, int h)
     glViewport(0, 0, w, h);
 
     // Set perspective
-    gluPerspective(45.0f ,ratio, 1.0f ,1000.0f);
+    gluPerspective(45.0f, ratio, 1.0f, 1000.0f);
 
     // return to the model view matrix mode
     glMatrixMode(GL_MODELVIEW);
@@ -57,8 +56,8 @@ static const struct Point L  = Point(0, 0, 0);
 static const struct Point Up = Point(0, 1, 0);
 
 static float r = 250;
-static float a = 315;
-static float b = 45;
+static float a = 45; /* angle in the XZ plane (horizontal) */
+static float b = 30; /* angle in the XY plane (vertical) */
 
 static int timebase = 0;
 static int frame = 0;
