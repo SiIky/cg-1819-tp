@@ -9,6 +9,9 @@
             </models>
         </group>
         <!-- Mercurio -->
+	   <group>
+		<translate X = "-5">
+		</translate>
         <group>
             <translate TIME="30">
                 <point X="10"/>
@@ -27,7 +30,7 @@
             <translate TIME="50">
                 <point Z="13"/>
                 <point X="-13"/>
-                <point Z="13"/>
+                <point Z="-13"/>
                 <point X="13"/>
             </translate>
             <rotate TIME="15" Y="1"/>
@@ -159,5 +162,6 @@
                 <model FILE="../assets/teapot.3d"/>
             </models>
         </group>
+	  </group>
     </group>
 </scene>
