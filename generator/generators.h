@@ -51,7 +51,7 @@ struct Box {
  * Representation of a Cone.
  */
 struct Cone {
-    float rad;          // radius
+    float rad;
     float height;
     unsigned slices;
     unsigned stacks;
@@ -88,14 +88,9 @@ struct Sphere {
  * | /
  * P2
  */
-void gen_triangle_write (FILE * outf, struct Triangle tri, struct Triangle norms);
+void gen_triangle_write (FILE * outf, struct Triangle tri, struct Triangle norms, struct Triangle tcoords);
 
 /**
- * @brief Outputs to a file the result of generating a rectangle with the provided values.
- * @param outf - Output file.
- * @param box - Input rectangle.
- * @param ndivs - Number of divisions.
- *
  * @brief Outputs to a file the result of generating a rectangle with the provided values.
  * @param outf - Output file.
  * @param tri - Input rectangle.
@@ -196,14 +191,16 @@ struct Box gen_box_from_whd (float width, float height, float depth);
  * @param inf - Input file.
  * @param pt - Point.  
  */
-bool gen_point_read (char * line, struct Point * pt, struct Point * norm);
+bool gen_point_read (char * line, struct Point * pt, struct Point * norm, struct Point * tcoord);
 
 /**
  * @brief Reads a model from a file.
- * @param inf - Input file.
- * @param vec - Vector of points.
+ * @param inf Input file.
+ * @param[out] vec Vector of points.
+ * @param[out] norms Vector of normals
+ * @param[out] tcoords Vector of texture coordinates
  */
-void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norm);
+void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norms, std::vector<struct Point> * tcoords);
 
 /* Operations on structs */
 

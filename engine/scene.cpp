@@ -18,6 +18,7 @@
 
 #include "scene.h"
 
+#define maybe(atr, def) ((atr) ? atr.as_float() : (def))
 #define match(tag, func) \
     if (strcmp(tag, trans.name()) == 0) func(trans, scene, group)
 
@@ -284,8 +285,6 @@ static bool sc_load_texture (struct scene * scene, std::string fname, std::map<s
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    /* TODO: Load and bind texture points */
-
     return true;
 }
 
@@ -300,7 +299,8 @@ static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, 
         assert(inf);
         std::vector<struct Point> vec;
         std::vector<struct Point> norm;
-        gen_model_read(inf, &vec, &norm);
+        std::vector<struct Point> tcoords;
+        gen_model_read(inf, &vec, &norm, &tcoords);
         fclose(inf);
 
         mvbo.length = vec.size();
@@ -328,6 +328,13 @@ static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, 
         glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 3, rafar, GL_STATIC_DRAW);
 
+        i = 0;
+        for (struct Point p : tcoords) {
+            rafar[i++] = p.x;
+            rafar[i++] = p.y;
+        }
+        /* TODO: Bind texture coordinates */
+
         free(rafar);
     }
 
@@ -339,8 +346,6 @@ static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, 
     model.id = mvbo.attribs.size() - 1;
     return model;
 }
-
-#define maybe(atr, def) ((atr) ? atr.as_float() : (def))
 
 static void sc_load_model (pugi::xml_node node, struct scene * scene, struct group * group, std::map<std::string, unsigned> * texts)
 {

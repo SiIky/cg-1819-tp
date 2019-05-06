@@ -65,7 +65,8 @@ static int timebase = 0;
 static int frame = 0;
 static struct scene scene;
 
-static bool draw_curves = true; /* draw Catmull-Rom curves? */
+static bool draw_axes   = true;  /* draw axes? */
+static bool draw_curves = true;  /* draw Catmull-Rom curves? */
 static bool draw_lights = false; /* draw static lights every frame? */
 
 void renderScene (void)
@@ -84,8 +85,8 @@ void renderScene (void)
             Up.x, Up.y, Up.z
             );
 
-    glBegin(GL_LINES);
-    {
+    if (draw_axes) {
+        glBegin(GL_LINES);
         glColor3ub(255, 0, 0);
         glVertex3f(0, 0, 0);
         glVertex3f(500, 0, 0);
@@ -97,8 +98,8 @@ void renderScene (void)
         glColor3ub(0, 0, 255);
         glVertex3f(0, 0, 0);
         glVertex3f(0, 0, 500);
+        glEnd();
     }
-    glEnd();
 
     unsigned elapsed_program_start = glutGet(GLUT_ELAPSED_TIME);
     unsigned elapsed_last_frame = elapsed_program_start - timebase;
@@ -115,7 +116,7 @@ void renderScene (void)
         char s[64];
         timebase = elapsed_program_start;
         frame = 0;
-        sprintf(s, "FPS: %f6.2", fps);
+        sprintf(s, "FPS: %6.2f", fps);
         glutSetWindowTitle(s);
     }
 }
@@ -136,6 +137,7 @@ void processKeys (unsigned char c, int xx, int yy)
         case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
 
+        toggle(draw_axes,   '%');
         toggle(draw_curves, '~');
         toggle(draw_lights, '$');
     }

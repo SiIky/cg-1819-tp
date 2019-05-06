@@ -13,6 +13,11 @@
 
 #define UNIMPLEMENTED() assert(!"unimplemented")
 
+/* TODO: Find&Replace all occurrences with the real texture coordinates */
+#define COORD Point(0, 0, 0)
+#define TRICOORD Triangle(COORD, COORD, COORD)
+#define RECTCOORD Rectangle(COORD, COORD, COORD, COORD)
+
 /*
  * Internal Functions
  */
@@ -129,13 +134,15 @@ static void mult_MPM (const float M[4][4], const struct Point P[4][4], struct Po
     mult_PM(tmp, M, r);
 }
 
-static inline void gen_point_write (FILE * outf, struct Point p, struct Point norm)
+static inline void gen_point_write (FILE * outf, struct Point p, struct Point norm, struct Point tcoords)
 {
     fprintf(outf,
             "%a %a %a "
-            "%a %a %a\n",
+            "%a %a %a "
+            "%a %a\n",
             p.x, p.y, p.z,
-            norm.x, norm.y, norm.z
+            norm.x, norm.y, norm.z,
+            tcoords.x, tcoords.y
            );
 }
 
@@ -150,10 +157,18 @@ static inline void gen_point_write (FILE * outf, struct Point p, struct Point no
  * |        |        |
  * P2 ---- P24 ---- P4
  */
-static void gen_rectangle_write_nodivs (FILE * outf, struct Rectangle rect, struct Rectangle norm)
+static void gen_rectangle_write_nodivs (FILE * outf, struct Rectangle rect, struct Rectangle norm, struct Rectangle tcoords)
 {
-    gen_triangle_write(outf, Triangle(rect.P1, rect.P2, rect.P3), Triangle(norm.P1, norm.P2, norm.P3));
-    gen_triangle_write(outf, Triangle(rect.P3, rect.P2, rect.P4), Triangle(norm.P3, norm.P2, norm.P4));
+    gen_triangle_write(outf,
+            Triangle(rect.P1, rect.P2, rect.P3),
+            Triangle(norm.P1, norm.P2, norm.P3),
+            Triangle(tcoords.P1, tcoords.P2, tcoords.P3)
+            );
+    gen_triangle_write(outf,
+            Triangle(rect.P3, rect.P2, rect.P4),
+            Triangle(norm.P3, norm.P2, norm.P4),
+            Triangle(tcoords.P3, tcoords.P2, tcoords.P4)
+            );
 }
 
 static struct Point gen_bezier_get_single_point (const struct Point MPM[4][4], float u, float v, struct Point * N)
@@ -268,16 +283,16 @@ static void gen_bezier_patch_single (FILE * outf, std::vector<struct Point> cps,
 
             struct Rectangle R = Rectangle(P1, P2, P3, P4);
             struct Rectangle N = Rectangle(N1, N2, N3, N4);
-            gen_rectangle_write_nodivs(outf, R, N);
+            gen_rectangle_write_nodivs(outf, R, N, RECTCOORD);
         }
     }
 }
 
-void gen_triangle_write (FILE * outf, struct Triangle tri, struct Triangle norms)
+void gen_triangle_write (FILE * outf, struct Triangle tri, struct Triangle norms, struct Triangle tcoords)
 {
-    gen_point_write(outf, tri.P1, norms.P1);
-    gen_point_write(outf, tri.P2, norms.P2);
-    gen_point_write(outf, tri.P3, norms.P3);
+    gen_point_write(outf, tri.P1, norms.P1, tcoords.P1);
+    gen_point_write(outf, tri.P2, norms.P2, tcoords.P2);
+    gen_point_write(outf, tri.P3, norms.P3, tcoords.P3);
 }
 
 void gen_rectangle_write (FILE * outf, struct Rectangle rect, unsigned ndivs)
@@ -295,7 +310,7 @@ void gen_rectangle_write (FILE * outf, struct Rectangle rect, unsigned ndivs)
             struct Point P3 = rect.P1 + (((float)  i      * w) * vw) + (((float) (j - 1) * h) * vh);
             struct Point P4 = rect.P1 + (((float)  i      * w) * vw) + (((float)  j      * h) * vh);
 
-            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(N, N, N, N));
+            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(N, N, N, N), RECTCOORD);
         }
     }
 }
@@ -376,7 +391,7 @@ void gen_cone_write (FILE * outf, struct Cone c)
             struct Point P3 = R * Point(xi1, H, zi1);
             struct Point N = normal(P2 - C, P3 - C);
 
-            gen_triangle_write(outf, Triangle(C, P2, P3), Triangle(N, N, N));
+            gen_triangle_write(outf, Triangle(C, P2, P3), Triangle(N, N, N), TRICOORD);
         }
 
         /* draw base */
@@ -386,7 +401,7 @@ void gen_cone_write (FILE * outf, struct Cone c)
             struct Point P3 = c.rad * Point(xi1, 0, zi1);
             const struct Point N = Point(0, -1, 0);
 
-            gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N, N, N));
+            gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N, N, N), TRICOORD);
         }
 
         /* draw side */
@@ -406,7 +421,7 @@ void gen_cone_write (FILE * outf, struct Cone c)
             const struct Point N12 = normal(P1 - P2, P4 - P3);
             const struct Point N34 = normal(P1 - P2, P4 - P3);
 
-            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(Nsi, Nsi, Nsi1, Nsi1));
+            gen_rectangle_write_nodivs(outf, Rectangle(P1, P2, P3, P4), Rectangle(Nsi, Nsi, Nsi1, Nsi1), RECTCOORD);
         }
     }
 }
@@ -436,7 +451,7 @@ void gen_cylinder_write (FILE * outf, struct Cylinder c)
         struct Triangle Ti = Triangle(C, PiT, Pi1T);
         struct Point N = Point(0, -1, 0);
 
-        gen_triangle_write(outf, Bi, Triangle(N, N, N));
+        gen_triangle_write(outf, Bi, Triangle(N, N, N), TRICOORD);
 
         for (unsigned j = 0; j < c.stacks; j++) {
             const float dh = c.height / (float) c.stacks;
@@ -451,11 +466,12 @@ void gen_cylinder_write (FILE * outf, struct Cylinder c)
             struct Point Ni1 = normalize(Point(Pi1B.x, 0, Pi1B.z));
             gen_rectangle_write_nodivs(outf,
                     Rectangle(P1, P2, P3, P4),
-                    Rectangle(Ni, Ni, Ni1, Ni1));
+                    Rectangle(Ni, Ni, Ni1, Ni1),
+                    RECTCOORD);
         }
 
         N = Point(0, 1, 0);
-        gen_triangle_write(outf, Ti, Triangle(N, N, N));
+        gen_triangle_write(outf, Ti, Triangle(N, N, N), TRICOORD);
     }
 }
 
@@ -465,6 +481,8 @@ void gen_sphere_write (FILE * outf, struct Sphere sph)
     verts.reserve((sph.slices + 1) * (sph.stacks + 1));
     std::vector<struct Point> normals;
     normals.reserve((sph.slices + 1) * (sph.stacks + 1));
+    std::vector<struct Point> tcoords;
+    tcoords.reserve((sph.slices + 1) * (sph.stacks + 1));
 
     for (unsigned i = 0; i <= sph.stacks; i++) {
         /* Stacks range between 0 and 180 degrees (pi).
@@ -488,30 +506,43 @@ void gen_sphere_write (FILE * outf, struct Sphere sph)
             double slat = sin(lat);
             double slon = sin(lon);
 
-            float x = (float) (sph.rad * clon * slat);
-            float y = (float) (sph.rad * clat);
-            float z = (float) (sph.rad * slon * slat);
+            float x = clon * slat;
+            float y = clat;
+            float z = slon * slat;
 
-            verts.push_back(Point(x, y, z));
-            normals.push_back(normalize(Point(x, y, z)));
+            verts.push_back(sph.rad * Point(x, y, z));
+            normals.push_back(Point(x, y, z));
+            tcoords.push_back(Point(
+                        (float) j / (float) sph.slices,
+                        (float) i / (float) sph.stacks,
+                        0
+                        ));
         }
     }
 
     /* Draws the sphere. */
     unsigned len = sph.slices * sph.stacks + sph.slices;
     for (unsigned i = 0; i < len; i++) {
-        struct Point P1 = verts[i];
-        struct Point P2 = verts[i + sph.slices + 1];
-        struct Point P3 = verts[i + sph.slices];
+        struct Point P1 = verts[i + sph.slices];
+        struct Point P2 = verts[i];
+        struct Point P3 = verts[i + sph.slices + 1];
         struct Point P4 = verts[i + 1];
 
-        struct Point N1 = normals[i];
-        struct Point N2 = normals[i + sph.slices + 1];
-        struct Point N3 = normals[i + sph.slices];
+        struct Point N1 = normals[i + sph.slices];
+        struct Point N2 = normals[i];
+        struct Point N3 = normals[i + sph.slices + 1];
         struct Point N4 = normals[i + 1];
 
-        gen_triangle_write(outf, Triangle(P1, P2, P3), Triangle(N1, N2, N3));
-        gen_triangle_write(outf, Triangle(P2, P1, P4), Triangle(N2, N1, N4));
+        struct Point T1 = tcoords[i + sph.slices];
+        struct Point T2 = tcoords[i];
+        struct Point T3 = tcoords[i + sph.slices + 1];
+        struct Point T4 = tcoords[i + 1];
+
+        struct Rectangle P = Rectangle(P1, P2, P3, P4);
+        struct Rectangle N = Rectangle(N1, N2, N3, N4);
+        struct Rectangle T = Rectangle(T1, T2, T3, T4);
+
+        gen_rectangle_write_nodivs(outf, P, N, T);
     }
 }
 
@@ -528,16 +559,19 @@ void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation)
  * Reading Functions.
  */
 
-void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norms)
+void gen_model_read (FILE * inf, std::vector<struct Point> * vec, std::vector<struct Point> * norms, std::vector<struct Point> * tcoords)
 {
     char line[1024] = "";
     struct Point pt = Point(0, 0, 0);
     struct Point norm = Point(0, 0, 0);
-    while (fgets(line, 1024, inf) != NULL && gen_point_read(line, &pt, &norm)) {
+    struct Point tcoord = Point(0, 0, 0);
+    while (fgets(line, 1024, inf) != NULL && gen_point_read(line, &pt, &norm, &tcoord)) {
         vec->push_back(pt);
         norms->push_back(norm);
+        tcoords->push_back(tcoord);
         pt = Point(0, 0, 0);
         norm = Point(0, 0, 0);
+        tcoord = Point(0, 0, 0);
     }
 }
 
@@ -580,14 +614,16 @@ struct Box gen_box_from_whd (float width, float height, float depth)
             );
 }
 
-bool gen_point_read (char * line, struct Point * pt, struct Point * norm)
+bool gen_point_read (char * line, struct Point * pt, struct Point * norm, struct Point * tcoords)
 {
     return sscanf(line,
             "%f %f %f "
-            "%f %f %f\n",
+            "%f %f %f "
+            "%f %f\n",
             &pt->x, &pt->y, &pt->z,
-            &norm->x, &norm->y, &norm->z
-            ) == 6;
+            &norm->x, &norm->y, &norm->z,
+            &tcoords->x, &tcoords->y
+            ) == 8;
 }
 
 struct Point Point (float x, float y, float z)
