@@ -9,6 +9,8 @@
 #include <GL/glut.h>
 #endif
 
+#include <IL/il.h>
+
 #include "scene.h"
 #include <math.h>
 
@@ -179,6 +181,8 @@ int main (int argc, char **argv)
     // init GLEW
     glewInit();
 #endif
+
+    ilInit();
 
     if (!sc_load_file(argv[1], &scene))
         return !0;

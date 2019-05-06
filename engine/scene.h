@@ -9,6 +9,9 @@
 #include <string>
 #include <vector>
 
+/**
+ * Geometric Transformation type
+ */
 enum gt_type {
     GT_ROTATE,
     GT_ROTATE_ANIM,
@@ -17,6 +20,9 @@ enum gt_type {
     GT_TRANSLATE_ANIM,
 };
 
+/**
+ * Geometric Transformation
+ */
 struct gt {
     /**
      * GT_ROTATE: axis to rotate around
@@ -41,63 +47,106 @@ struct gt {
     enum gt_type type;
 };
 
+/**
+ * An instance of a model
+ */
 struct model {
-    std::string fname;
-    unsigned id;
+    /* TODO: remove all the strings! */
+    std::string fname; /*< Key to this model's IDs */
+    unsigned id;       /*< Index to this model's attributes */
 };
 
+/**
+ * A group of objects
+ */
 struct group {
-    std::vector<struct gt>     gt;
-    std::vector<struct model>  models;
-    std::vector<struct group*> subgroups;
+    std::vector<struct gt> gt;            /*< Geometric Transformations */
+    std::vector<struct model> models;     /*< Model instances */
+    std::vector<struct group*> subgroups; /*< Subgroups */
 };
 
-struct textura_ou_merdas {
-    bool has_amb;
-    bool has_diff;
-    bool has_emi;
-    bool has_spec;
-    bool has_text;
-    std::string text;
-    struct Point amb;
-    struct Point diff;
-    struct Point emi;
-    struct Point spec;
+/**
+ * Attributes of an instance of a model
+ */
+struct attribs {
+    bool has_amb;  /*< Has ambient light? */
+    bool has_diff; /*< Has diffuse light? */
+    bool has_emi;  /*< Has emissive light? */
+    bool has_spec; /*< Has specular light? */
+    bool has_text; /*< Has a texture? */
+
+    unsigned text;     /*< Texture ID */
+    struct Point amb;  /*< Ambient Light */
+    struct Point diff; /*< Diffuse Light */
+    struct Point emi;  /*< Emissive Light */
+    struct Point spec; /*< Specular Light */
 };
 
+/**
+ * A model
+ */
 struct model_vbo {
-    /** Verteces VBO ID */
-    GLuint v_id;
+    unsigned v_id; /*< Verteces VBO ID */
+    unsigned n_id; /*< Normals VBO ID */
+    size_t length; /*< Vertex count */
 
-    /** Normals VBO ID */
-    GLuint n_id;
-
-    /** Vertex count */
-    size_t length;
-
-    std::vector<struct textura_ou_merdas> vector_de_textura_ou_merdas;
+    /** Vector with the attributes of every instance of this model */
+    std::vector<struct attribs> attribs;
 };
 
+/**
+ * Static Light type
+ */
 enum lt_type {
-    LT_POINT,
-    LT_SPOT,
-    LT_DIR,
+    LT_POINT, /*< Positional Light */
+    LT_SPOT,  /*< Spotlight */
+    LT_DIR,   /*< Directional Light */
 };
 
+/**
+ * Static light
+ */
 struct light {
-    enum lt_type type;
-    struct Point color;
-    struct Point pos;
+    enum lt_type type;  /*< The type of light */
+    struct Point color; /*< Its color */
+    struct Point pos;   /*< Its position */
 };
 
+/**
+ * The scene type. It contains all the info necessary to draw a scene
+ */
 struct scene {
-    std::vector<struct light*>          lights;
-    std::vector<struct group*>          groups;
+    /** Static lights */
+    std::vector<struct light*> lights;
+
+    /** Groups of objects */
+    std::vector<struct group*> groups;
+
+    /** Models data */
     std::map<std::string, struct model_vbo> models;
 };
 
-bool sc_load_file   (const char * path, struct scene * scene);
-void sc_draw        (struct scene * scene, unsigned int elapsed, bool draw_curves, bool draw_ligts);
-void sc_draw_lights (struct scene * scene);
+/**
+ * @brief Load a scene file
+ * @param path The path to the file
+ * @param[out] scene Where to save loaded data
+ * @returns `true` if successfully loaded the scene file
+ */
+bool sc_load_file (const char * path, struct scene * scene);
+
+/**
+ * @brief Draw a scene
+ * @param scene The scene
+ * @param elapsed Number of ms since program start
+ * @param draw_curves Draw Catmull-Rom curves?
+ * @param draw_ligts Draw static lights?
+ */
+void sc_draw (struct scene * scene, unsigned elapsed, bool draw_curves, bool draw_ligts);
+
+/**
+ * @brief Draw a scene's static lights
+ * @param scene The scene
+ */
+void sc_draw_lights (const struct scene * scene);
 
 #endif /* _SCENE_H */

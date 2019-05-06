@@ -11,6 +11,8 @@
 #include <GL/glut.h>
 #endif
 
+#include <IL/il.h>
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -22,15 +24,13 @@
 #define UNIMPLEMENTED() assert(!"unimplemented")
 #define UNREACHABLE()   assert(!"unreachable")
 
-static void get_global_catmull_rom_point (float gt, struct Point * pos, struct Point * deriv, const std::vector<struct Point> cp);
-
 static void sc_draw_rotate (const struct gt * gt)
 {
     assert(gt->type == GT_ROTATE);
     glRotatef(gt->angle, gt->p.x, gt->p.y, gt->p.z);
 }
 
-static void sc_draw_rotate_anim (const struct gt * gt, unsigned int elapsed)
+static void sc_draw_rotate_anim (const struct gt * gt, unsigned elapsed)
 {
     assert(gt->type == GT_ROTATE_ANIM);
     float angle = (360.0 * elapsed) / gt->time;
@@ -49,25 +49,23 @@ static void sc_draw_translate (const struct gt * gt)
     glTranslatef(gt->p.x, gt->p.y, gt->p.z);
 }
 
-static void sc_draw_translate_anim (struct gt * gt, unsigned int elapsed)
+static void get_global_catmull_rom_point (float gt, struct Point * pos, struct Point * deriv, const std::vector<struct Point> cp);
+static void sc_draw_translate_anim (struct gt * gt, unsigned elapsed)
 {
     assert(gt->type == GT_TRANSLATE_ANIM);
     float t = (float) elapsed / (float) gt->time;
-
     struct Point pos;
     struct Point deriv;
-
     get_global_catmull_rom_point(t, &pos, &deriv, gt->control_points);
-    glTranslatef(pos.x,pos.y,pos.z);
+    glTranslatef(pos.x, pos.y, pos.z);
 }
 
 static void mult_matrix_vector (const float m[16], const float v[4], float res[4])
 {
-    for (int j = 0; j < 4; j++) {
+    for (unsigned j = 0; j < 4; j++) {
         res[j] = 0;
-        for (int k = 0; k < 4; k++) {
+        for (unsigned k = 0; k < 4; k++)
             res[j] += v[k] * m[j * 4 + k];
-        }
     }
 }
 
@@ -142,37 +140,37 @@ static void buildRotMatrix (struct Point x, struct Point y, struct Point z, floa
 
 static void sc_draw_cm_curve (const struct gt * gt)
 {
-    glBegin(GL_LINE_LOOP); {
-        for (float i = 0; i < 1; i += 0.01) {
-            struct Point pos;
-            struct Point deriv;
+    glBegin(GL_LINE_LOOP);
+    for (unsigned i = 0; i < 100; i++) {
+        struct Point pos;
+        struct Point deriv;
 
-            get_global_catmull_rom_point(i, &pos, &deriv, gt->control_points);
-            glVertex3f(pos.x, pos.y, pos.z);
-        }
-    } glEnd();
+        get_global_catmull_rom_point(((float) i) / 100, &pos, &deriv, gt->control_points);
+        glVertex3f(pos.x, pos.y, pos.z);
+    }
+    glEnd();
 }
 
 static void sc_draw_model (struct scene * scene, struct model * model)
 {
     glPushAttrib(GL_LIGHTING_BIT);
     struct model_vbo mvbo = scene->models[model->fname];
-    struct textura_ou_merdas tom = mvbo.vector_de_textura_ou_merdas[model->id];
+    struct attribs tom = mvbo.attribs[model->id];
 
 #define draw_(T, GL) \
     if (tom.has_ ## T) do { \
         GLfloat color[4] = {tom.T.x, tom.T.y, tom.T.z, 1}; \
         glMaterialfv(GL_FRONT, GL, color);                 \
     } while (0)
-    draw_(amb, GL_AMBIENT);
+    draw_(amb,  GL_AMBIENT);
     draw_(diff, GL_DIFFUSE);
-    draw_(emi, GL_EMISSION);
+    draw_(emi,  GL_EMISSION);
     draw_(spec, GL_SPECULAR);
 #undef draw_
 
     /* TODO: Draw texture */
-    if (tom.has_text) {
-    }
+    if (tom.has_text)
+        glBindTexture(GL_TEXTURE_2D, tom.text);
 
     /* bind and draw the triangles */
     glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
@@ -183,11 +181,15 @@ static void sc_draw_model (struct scene * scene, struct model * model)
     glNormalPointer(GL_FLOAT, 0, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
+
+    if (tom.has_text)
+        glBindTexture(GL_TEXTURE_2D, 0);
+
     glPopAttrib();
 }
 
 static void sc_draw_groups (struct scene * scene, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves);
-static void sc_draw_group (struct scene * scene, struct group * group, unsigned int elapsed, bool draw_curves)
+static void sc_draw_group (struct scene * scene, struct group * group, unsigned elapsed, bool draw_curves)
 {
     for (struct gt gt : group->gt) {
         switch (gt.type) {
@@ -218,7 +220,7 @@ static void sc_draw_groups (struct scene * scene, std::vector<struct group*> gro
     }
 }
 
-static void sc_draw_light (struct scene * scene, struct light * light, unsigned i)
+static void sc_draw_light (const struct scene * scene, struct light * light, unsigned i)
 {
     float w = (light->type == LT_POINT) ?
         1:
@@ -235,105 +237,145 @@ static void sc_draw_light (struct scene * scene, struct light * light, unsigned 
     glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, colour);
 }
 
-void sc_draw_lights (struct scene * scene)
+void sc_draw_lights (const struct scene * scene)
 {
     unsigned i = 0;
     for (struct light * light : scene->lights)
         sc_draw_light(scene, light, i++);
 }
 
-void sc_draw (struct scene * scene, unsigned int elapsed, bool draw_curves, bool draw_ligts)
+void sc_draw (struct scene * scene, unsigned elapsed, bool draw_curves, bool draw_ligts)
 {
     if (draw_ligts)
         sc_draw_lights(scene);
     sc_draw_groups(scene, scene->groups, elapsed, draw_curves);
 }
 
+static unsigned sc_load_texture (struct scene * scene, std::string fname, std::map<std::string, unsigned> * texts)
+{
+    if (texts->count(fname))
+        return (*texts)[fname];
+
+    ilEnable(IL_ORIGIN_SET);
+    ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+
+    unsigned t = 0;
+    ilGenImages(1, &t);
+    ilBindImage(t);
+    ilLoadImage(fname.c_str());
+    ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+
+    unsigned ret = 0;
+    glGenTextures(1, &ret);
+    glBindTexture(GL_TEXTURE_2D, ret);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+    unsigned w = ilGetInteger(IL_IMAGE_WIDTH);
+    unsigned h = ilGetInteger(IL_IMAGE_HEIGHT);
+    unsigned char * data = ilGetData();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    /* TODO: Load and bind texture points */
+
+    return ret;
+}
+
+static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, const char * fname)
+{
+    struct model_vbo mvbo = {0};
+
+    if (scene->models.count(fname)) {
+        mvbo = scene->models[fname];
+    } else {
+        FILE * inf = fopen(fname, "r");
+        assert(inf);
+        std::vector<struct Point> vec;
+        std::vector<struct Point> norm;
+        gen_model_read(inf, &vec, &norm);
+        fclose(inf);
+
+        mvbo.length = vec.size();
+        float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));
+
+        unsigned i = 0;
+        for (struct Point p : vec) {
+            rafar[i++] = p.x;
+            rafar[i++] = p.y;
+            rafar[i++] = p.z;
+        }
+
+        glGenBuffers(1, &mvbo.v_id);
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 3, rafar, GL_STATIC_DRAW);
+
+        i = 0;
+        for (struct Point p : norm) {
+            rafar[i++] = p.x;
+            rafar[i++] = p.y;
+            rafar[i++] = p.z;
+        }
+
+        glGenBuffers(1, &mvbo.n_id);
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 3, rafar, GL_STATIC_DRAW);
+
+        free(rafar);
+    }
+
+    mvbo.attribs.push_back(tom);
+    scene->models[fname] = mvbo;
+
+    struct model model;
+    model.fname = fname;
+    model.id = mvbo.attribs.size() - 1;
+    return model;
+}
+
 #define maybe(atr, def) ((atr) ? atr.as_float() : (def))
 
-static void sc_load_model (pugi::xml_node node, struct scene * scene, struct group * group)
+static void sc_load_model (pugi::xml_node node, struct scene * scene, struct group * group, std::map<std::string, unsigned> * texts)
 {
-	struct textura_ou_merdas tom;
+    struct attribs tom;
 
 #define has_(T, I) \
-	has_ ## T = node.attribute(I "R") || node.attribute(I "G") || node.attribute(I "B")
-	tom.has_(amb, "amb");
-	tom.has_(diff, "diff");
-	tom.has_(spec, "spec");
-	tom.has_(emi, "emi");
+    has_ ## T = node.attribute(I "R") || node.attribute(I "G") || node.attribute(I "B")
+    tom.has_(amb,  "amb");
+    tom.has_(diff, "diff");
+    tom.has_(spec, "spec");
+    tom.has_(emi,  "emi");
 #undef has_
 
 #define read_(T, I) \
-	if (tom.has_ ## T) do { \
-		tom.T.x = maybe(node.attribute(I "R"), 0); \
-		tom.T.y = maybe(node.attribute(I "G"), 0); \
-		tom.T.z = maybe(node.attribute(I "B"), 0); \
-	} while (0)
-	read_(amb, "amb");
-	read_(diff, "diff");
-	read_(spec, "spec");
-	read_(emi, "emi");
+    if (tom.has_ ## T) do { \
+        tom.T.x = maybe(node.attribute(I "R"), 0); \
+        tom.T.y = maybe(node.attribute(I "G"), 0); \
+        tom.T.z = maybe(node.attribute(I "B"), 0); \
+    } while (0)
+    read_(amb,  "amb");
+    read_(diff, "diff");
+    read_(spec, "spec");
+    read_(emi,  "emi");
 #undef read_
 
-	tom.has_text = node.attribute("texture");
-	if (tom.has_text)
-		tom.text = node.attribute("texture").value();
+    tom.has_text = node.attribute("texture");
+    if (tom.has_text)
+        tom.text = sc_load_texture(scene, node.attribute("texture").value(), texts);
 
-	const char * fname = node.attribute("FILE").value();
-	struct model_vbo mvbo;
-
-	if (scene->models.count(fname)) {
-		mvbo = scene->models[fname];
-	} else {
-		FILE * inf = fopen(fname, "r");
-		assert(inf);
-		std::vector<struct Point> vec;
-		std::vector<struct Point> norm;
-		gen_model_read(inf, &vec, &norm);
-		fclose(inf);
-
-		mvbo.length = vec.size();
-		float * rafar = (float *) calloc(vec.size() * 3, sizeof(float));
-
-		unsigned i = 0;
-		for (struct Point p : vec) {
-			rafar[i++] = p.x;
-			rafar[i++] = p.y;
-			rafar[i++] = p.z;
-		}
-
-		glGenBuffers(1, &mvbo.v_id);
-		glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 3, rafar, GL_STATIC_DRAW);
-
-		i = 0;
-		for (struct Point p : norm) {
-			rafar[i++] = p.x;
-			rafar[i++] = p.y;
-			rafar[i++] = p.z;
-		}
-
-		glGenBuffers(1, &mvbo.n_id);
-		glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 3, rafar, GL_STATIC_DRAW);
-
-		free(rafar);
-	}
-
-	mvbo.vector_de_textura_ou_merdas.push_back(tom);
-	scene->models[fname] = mvbo;
-
-	struct model model;
-	model.fname = fname;
-	model.id = mvbo.vector_de_textura_ou_merdas.size() - 1;
-	group->models.push_back(model);
+    const char * fname = node.attribute("FILE").value();
+    struct model model = sc_load_3d_model(scene, tom, fname);
+    group->models.push_back(model);
 }
 
-static void sc_load_models (pugi::xml_node node, struct scene * scene, struct group * group)
+static void sc_load_models (pugi::xml_node node, struct scene * scene, struct group * group, std::map<std::string, unsigned> * texts)
 {
     for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling())
         if (strcmp("model", trans.name()) == 0)
-            sc_load_model(trans, scene, group);
+            sc_load_model(trans, scene, group, texts);
 }
 
 static void sc_load_rotate (pugi::xml_node node, struct scene * scene, struct group * group)
@@ -404,16 +446,17 @@ static void sc_load_translate (pugi::xml_node node, struct scene * scene, struct
     group->gt.push_back(translate);
 }
 
-static void sc_load_group (pugi::xml_node node, struct scene * scene, struct group * group)
+static void sc_load_group (pugi::xml_node node, struct scene * scene, struct group * group, std::map<std::string, unsigned> * texts)
 {
     for (pugi::xml_node trans = node.first_child(); trans; trans = trans.next_sibling()) {
         match("translate", sc_load_translate);
         else match("rotate", sc_load_rotate);
         else match("scale", sc_load_scale);
-        else match("models", sc_load_models);
-        else if (strcmp("group", trans.name()) == 0) {
+        else if (strcmp("models", trans.name()) == 0) {
+            sc_load_models(trans, scene, group, texts);
+        } else if (strcmp("group", trans.name()) == 0) {
             struct group * subgroup = (struct group*) calloc(1, sizeof(struct group));
-            sc_load_group(trans, scene, subgroup);
+            sc_load_group(trans, scene, subgroup, texts);
             group->subgroups.push_back(subgroup);
         }
     }
@@ -463,12 +506,17 @@ bool sc_load_file (const char * path, struct scene * scene)
     if (!doc.load_file(path))
         return false;
 
-    pugi::xml_node models = doc.child("scene");
+    /*
+     * There's no need to load the same texture more than once, so we
+     * the textures loaded so far here
+     */
+    std::map<std::string, unsigned> texts;
 
+    pugi::xml_node models = doc.child("scene");
     for (pugi::xml_node trans = models.first_child(); trans; trans = trans.next_sibling()) {
         if (strcmp("group", trans.name()) == 0) {
             struct group * group = (struct group*) calloc(1, sizeof(struct group));
-            sc_load_group(trans, scene, group);
+            sc_load_group(trans, scene, group, &texts);
             scene->groups.push_back(group);
         } else if (strcmp("lights", trans.name()) == 0) {
             sc_load_lights(trans, scene);
