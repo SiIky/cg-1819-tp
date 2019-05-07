@@ -243,7 +243,7 @@ static void gen_bezier_patch_read (FILE * inf, std::vector<struct Point> * cps, 
     }
 }
 
-static void gen_bezier_patch_single (FILE * outf, std::vector<struct Point> cps, std::vector<unsigned> idxs, unsigned tessellation)
+static void gen_bezier_patch_single (FILE * outf, std::vector<struct Point> cps, std::vector<unsigned> idxs, unsigned tessellation, float sfactor)
 {
     const float M[4][4] = {
         { -1,  3, -3, 1, },
@@ -276,10 +276,10 @@ static void gen_bezier_patch_single (FILE * outf, std::vector<struct Point> cps,
             struct Point N3 = Point(0, 0, 0);
             struct Point N4 = Point(0, 0, 0);
 
-            struct Point P1 = gen_bezier_get_single_point(MPM, u,  v_, &N1);
-            struct Point P2 = gen_bezier_get_single_point(MPM, u,  v, &N2);
-            struct Point P3 = gen_bezier_get_single_point(MPM, u_, v_, &N3);
-            struct Point P4 = gen_bezier_get_single_point(MPM, u_, v, &N4);
+            struct Point P1 = sfactor * gen_bezier_get_single_point(MPM, u,  v_, &N1);
+            struct Point P2 = sfactor * gen_bezier_get_single_point(MPM, u,  v, &N2);
+            struct Point P3 = sfactor * gen_bezier_get_single_point(MPM, u_, v_, &N3);
+            struct Point P4 = sfactor * gen_bezier_get_single_point(MPM, u_, v, &N4);
 
             struct Rectangle R = Rectangle(P1, P2, P3, P4);
             struct Rectangle N = Rectangle(N1, N2, N3, N4);
@@ -546,13 +546,13 @@ void gen_sphere_write (FILE * outf, struct Sphere sph)
     }
 }
 
-void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation)
+void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation, float sfactor)
 {
     std::vector<struct Point> cps;
     std::vector<std::vector<unsigned>> patches;
     gen_bezier_patch_read(inf, &cps, &patches);
     for (std::vector<unsigned> patch : patches)
-        gen_bezier_patch_single(outf, cps, patch, tessellation);
+        gen_bezier_patch_single(outf, cps, patch, tessellation, sfactor);
 }
 
 /**

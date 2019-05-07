@@ -57,7 +57,7 @@ float deg2rad (float deg)
 static const struct Point L  = Point(0, 0, 0);
 static const struct Point Up = Point(0, 1, 0);
 
-static float r = 250;
+static float r = 130;
 static float a = 45; /* angle in the XZ plane (horizontal) */
 static float b = 30; /* angle in the XY plane (vertical) */
 
@@ -122,7 +122,6 @@ void renderScene (void)
 
 void processKeys (unsigned char c, int xx, int yy)
 {
-#define toggle(opt, key) case key: opt = !opt; break
     switch (c) {
         case 'w': b += 1; break;
         case 'a': a -= 1; break;
@@ -136,9 +135,11 @@ void processKeys (unsigned char c, int xx, int yy)
         case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
 
+#define toggle(opt, key) case key: opt = !opt; break
         toggle(draw_axes,   '%');
         toggle(draw_curves, '~');
         toggle(draw_lights, '$');
+#undef toggle
     }
 }
 

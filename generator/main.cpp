@@ -14,7 +14,8 @@
  * @param argv - Programme name (function will only be called if argv < 2).
  * @return 0, for success.
  */
-int usage_rectangle (const char ** argv) {
+int usage_rectangle (const char ** argv)
+{
     printf("\t%s rectangle OUTFILE WIDTH DEPTH [NDIVS]\n", *argv);
     return !0;
 }
@@ -65,7 +66,7 @@ int usage_sphere (const char ** argv)
 
 int usage_bezier (const char ** argv)
 {
-    printf("\t%s bezier OUTFILE INFILE TESSELLATION\n", *argv);
+    printf("\t%s bezier OUTFILE INFILE [TESSELLATION [SCALE_FACTOR]]\n", *argv);
     return !0;
 }
 
@@ -192,12 +193,14 @@ int main_sphere (FILE * outf, int argc, const char ** argv)
 
 int main_bezier (FILE * outf, int argc, const char ** argv)
 {
-    if (argc < 5)
+    if (argc < 4)
         return usage_bezier(argv);
     FILE * inf = fopen(argv[3], "r");
     unsigned tessellation = 0;
-    sscanf(argv[4], "%u", &tessellation);
-    gen_bezier_patch_write(outf, inf, tessellation);
+    if (argc > 4) sscanf(argv[4], "%u", &tessellation);
+    float sfactor = 0;
+    if (argc > 5) sscanf(argv[5], "%f", &sfactor);
+    gen_bezier_patch_write(outf, inf, tessellation, sfactor);
     return 0;
 }
 

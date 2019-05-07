@@ -142,7 +142,7 @@ void gen_cylinder_write (FILE * outf, struct Cylinder c);
  */
 void gen_sphere_write (FILE * outf, struct Sphere sph);
 
-void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation);
+void gen_bezier_patch_write (FILE * outf, FILE * inf, unsigned tessellation, float sfactor);
 
 /**
  * @brief Generates a Rectangle from width-depth.
