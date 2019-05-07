@@ -69,11 +69,11 @@ struct group {
  * Attributes of an instance of a model
  */
 struct attribs {
-    bool has_amb;  /*< Has ambient light? */
-    bool has_diff; /*< Has diffuse light? */
-    bool has_emi;  /*< Has emissive light? */
-    bool has_spec; /*< Has specular light? */
-    bool has_text; /*< Has a texture? */
+    unsigned char has_amb  : 1; /*< Has ambient light? */
+    unsigned char has_diff : 1; /*< Has diffuse light? */
+    unsigned char has_emi  : 1; /*< Has emissive light? */
+    unsigned char has_spec : 1; /*< Has specular light? */
+    unsigned char has_text : 1; /*< Has a texture? */
 
     unsigned text;     /*< Texture ID */
     struct Point amb;  /*< Ambient Light */
@@ -88,6 +88,7 @@ struct attribs {
 struct model_vbo {
     unsigned v_id; /*< Verteces VBO ID */
     unsigned n_id; /*< Normals VBO ID */
+    unsigned t_id; /*< Texture coordinates buffer ID */
     size_t length; /*< Vertex count */
 
     /** Vector with the attributes of every instance of this model */

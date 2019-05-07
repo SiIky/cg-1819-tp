@@ -478,10 +478,10 @@ void gen_cylinder_write (FILE * outf, struct Cylinder c)
 void gen_sphere_write (FILE * outf, struct Sphere sph)
 {
     std::vector<struct Point> verts;
-    verts.reserve((sph.slices + 1) * (sph.stacks + 1));
     std::vector<struct Point> normals;
-    normals.reserve((sph.slices + 1) * (sph.stacks + 1));
     std::vector<struct Point> tcoords;
+    verts.reserve((sph.slices + 1) * (sph.stacks + 1));
+    normals.reserve((sph.slices + 1) * (sph.stacks + 1));
     tcoords.reserve((sph.slices + 1) * (sph.stacks + 1));
 
     for (unsigned i = 0; i <= sph.stacks; i++) {
@@ -513,8 +513,8 @@ void gen_sphere_write (FILE * outf, struct Sphere sph)
             verts.push_back(sph.rad * Point(x, y, z));
             normals.push_back(Point(x, y, z));
             tcoords.push_back(Point(
-                        (float) j / (float) sph.slices,
-                        (float) i / (float) sph.stacks,
+                        1 - ((double) j) / ((double) sph.slices),
+                        1 - ((double) i) / ((double) sph.stacks),
                         0
                         ));
         }

@@ -104,7 +104,6 @@ void renderScene (void)
     unsigned elapsed_program_start = glutGet(GLUT_ELAPSED_TIME);
     unsigned elapsed_last_frame = elapsed_program_start - timebase;
 
-    glColor3ub(100, 100, 100);
     sc_draw(&scene, elapsed_program_start, draw_curves, draw_lights);
 
     // End of frame
@@ -169,6 +168,8 @@ int main (int argc, char **argv)
     glEnable(GL_CULL_FACE);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnable(GL_TEXTURE_2D);
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -179,6 +180,8 @@ int main (int argc, char **argv)
     glEnable(GL_LIGHT5);
     glEnable(GL_LIGHT6);
     glEnable(GL_LIGHT7);
+
+    glClearColor(0, 0, 0, 0);
 
 #ifndef __APPLE__
     // init GLEW

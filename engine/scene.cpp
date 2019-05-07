@@ -156,11 +156,11 @@ static void sc_draw_model (struct scene * scene, struct model * model)
 {
     glPushAttrib(GL_LIGHTING_BIT);
     struct model_vbo mvbo = scene->models[model->fname];
-    struct attribs tom = mvbo.attribs[model->id];
+    struct attribs atr = mvbo.attribs[model->id];
 
 #define draw_(T, GL) \
-    if (tom.has_ ## T) do { \
-        GLfloat color[4] = {tom.T.x, tom.T.y, tom.T.z, 1}; \
+    if (atr.has_ ## T) do { \
+        GLfloat color[4] = {atr.T.x, atr.T.y, atr.T.z, 1}; \
         glMaterialfv(GL_FRONT, GL, color);                 \
     } while (0)
     draw_(amb,  GL_AMBIENT);
@@ -168,10 +168,6 @@ static void sc_draw_model (struct scene * scene, struct model * model)
     draw_(emi,  GL_EMISSION);
     draw_(spec, GL_SPECULAR);
 #undef draw_
-
-    /* TODO: Draw texture */
-    if (tom.has_text)
-        glBindTexture(GL_TEXTURE_2D, tom.text);
 
     /* bind and draw the triangles */
     glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
@@ -181,10 +177,14 @@ static void sc_draw_model (struct scene * scene, struct model * model)
     glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
     glNormalPointer(GL_FLOAT, 0, 0);
 
-    glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
+    if (atr.has_text) {
+        glBindTexture(GL_TEXTURE_2D, atr.text);
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.t_id);
+        glTexCoordPointer(2, GL_FLOAT, 0, 0);
+    }
 
-    if (tom.has_text)
-        glBindTexture(GL_TEXTURE_2D, 0);
+    glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glPopAttrib();
 }
@@ -254,10 +254,10 @@ void sc_draw (struct scene * scene, unsigned elapsed, bool draw_curves, bool dra
 
 static bool sc_load_texture (struct scene * scene, std::string fname, std::map<std::string, unsigned> * texts, unsigned * ret)
 {
-    *ret = 0;
-
     if (texts->count(fname))
         return (*ret = (*texts)[fname]), true;
+
+    *ret = 0;
 
     ilEnable(IL_ORIGIN_SET);
     ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
@@ -266,7 +266,7 @@ static bool sc_load_texture (struct scene * scene, std::string fname, std::map<s
     ilGenImages(1, &t);
     ilBindImage(t);
     if (!ilLoadImage(fname.c_str()))
-        return false;
+        return fprintf(stderr, "Error loading texture (maybe it's missing?)\n"), false;
 
     ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
 
@@ -288,7 +288,7 @@ static bool sc_load_texture (struct scene * scene, std::string fname, std::map<s
     return true;
 }
 
-static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, const char * fname)
+static struct model sc_load_3d_model (struct scene * scene, struct attribs atr, const char * fname)
 {
     struct model_vbo mvbo = {0};
 
@@ -333,12 +333,14 @@ static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, 
             rafar[i++] = p.x;
             rafar[i++] = p.y;
         }
-        /* TODO: Bind texture coordinates */
+        glGenBuffers(1, &mvbo.t_id);
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.t_id);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * mvbo.length * 2, rafar, GL_STATIC_DRAW);
 
         free(rafar);
     }
 
-    mvbo.attribs.push_back(tom);
+    mvbo.attribs.push_back(atr);
     scene->models[fname] = mvbo;
 
     struct model model;
@@ -349,21 +351,21 @@ static struct model sc_load_3d_model (struct scene * scene, struct attribs tom, 
 
 static void sc_load_model (pugi::xml_node node, struct scene * scene, struct group * group, std::map<std::string, unsigned> * texts)
 {
-    struct attribs tom;
+    struct attribs atr;
 
 #define has_(T, I) \
     has_ ## T = node.attribute(I "R") || node.attribute(I "G") || node.attribute(I "B")
-    tom.has_(amb,  "amb");
-    tom.has_(diff, "diff");
-    tom.has_(spec, "spec");
-    tom.has_(emi,  "emi");
+    atr.has_(amb,  "amb");
+    atr.has_(diff, "diff");
+    atr.has_(spec, "spec");
+    atr.has_(emi,  "emi");
 #undef has_
 
 #define read_(T, I) \
-    if (tom.has_ ## T) do { \
-        tom.T.x = maybe(node.attribute(I "R"), 0); \
-        tom.T.y = maybe(node.attribute(I "G"), 0); \
-        tom.T.z = maybe(node.attribute(I "B"), 0); \
+    if (atr.has_ ## T) do { \
+        atr.T.x = maybe(node.attribute(I "R"), 0); \
+        atr.T.y = maybe(node.attribute(I "G"), 0); \
+        atr.T.z = maybe(node.attribute(I "B"), 0); \
     } while (0)
     read_(amb,  "amb");
     read_(diff, "diff");
@@ -371,11 +373,11 @@ static void sc_load_model (pugi::xml_node node, struct scene * scene, struct gro
     read_(emi,  "emi");
 #undef read_
 
-    tom.has_text = node.attribute("texture")
-        && sc_load_texture(scene, node.attribute("texture").value(), texts, &tom.text);
+    atr.has_text = node.attribute("texture")
+        && sc_load_texture(scene, node.attribute("texture").value(), texts, &atr.text);
 
     const char * fname = node.attribute("FILE").value();
-    struct model model = sc_load_3d_model(scene, tom, fname);
+    struct model model = sc_load_3d_model(scene, atr, fname);
     group->models.push_back(model);
 }
 
