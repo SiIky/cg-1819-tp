@@ -57,7 +57,7 @@ float deg2rad (float deg)
 static const struct Point L  = Point(0, 0, 0);
 static const struct Point Up = Point(0, 1, 0);
 
-static float r = 130;
+static float r = 50;
 static float a = 45; /* angle in the XZ plane (horizontal) */
 static float b = 30; /* angle in the XY plane (vertical) */
 

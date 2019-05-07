@@ -167,6 +167,8 @@ static void sc_draw_model (struct scene * scene, struct model * model)
     draw_(diff, GL_DIFFUSE);
     draw_(emi,  GL_EMISSION);
     draw_(spec, GL_SPECULAR);
+
+    //glMaterialf(GL_FRONT, GL_SHININESS, 128);
 #undef draw_
 
     /* bind and draw the triangles */
@@ -266,7 +268,7 @@ static bool sc_load_texture (struct scene * scene, std::string fname, std::map<s
     ilGenImages(1, &t);
     ilBindImage(t);
     if (!ilLoadImage(fname.c_str()))
-        return fprintf(stderr, "Error loading texture (maybe it's missing?)\n"), false;
+        return fprintf(stderr, "Error loading texture `%s` (maybe it's missing?)\n", fname.c_str()), false;
 
     ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
 
