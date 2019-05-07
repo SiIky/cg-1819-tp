@@ -24,10 +24,10 @@
                     <point Z="10"/>
                     <point X="7.07" Z="7.07"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
-                <scale X="0.04" Y="0.04" Z="0.04"/>
+                <rotate TIME="5" Y="1"/>
+                <scale X="0.14" Y="0.14" Z="0.14"/>
                 <models>
-                    <model FILE="../assets/sphere.3d"/>
+                    <model FILE="../assets/sphere.3d" texture="../assets/mercury.jpg" />
                 </models>
             </group>
             <!-- Venus -->
@@ -43,7 +43,7 @@
                     <point Z="9.19" X ="9.19"/>
                 </translate>
                 <rotate TIME="15" Y="1"/>
-                <scale X="0.05" Y="0.05" Z="0.05"/>
+                <scale X="0.15" Y="0.15" Z="0.15"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
@@ -60,14 +60,14 @@
                     <point Z="-16"/>
                     <point Z="-11.31" X ="-11.31"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
-                <scale X="0.05" Y="0.05" Z="0.05"/>
+                <rotate TIME="5" Y="1"/>
+                <scale X="0.15" Y="0.15" Z="0.15"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
                 <group>
-                    <translate Z="20" />
-                    <scale X="0.3" Y="0.3" Z="0.3"/>
+                    <translate Z="10" />
+                    <scale X="0.2" Y="0.2" Z="0.2"/>
                     <models>
                         <model FILE="../assets/sphere.3d"/>
                     </models>
@@ -85,8 +85,8 @@
                     <point X="19"/>
                     <point Z="-13.43" X ="13.43"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
-                <scale X="0.04" Y="0.04" Z="0.04"/>
+                <rotate TIME="5" Y="1"/>
+                <scale X="0.24" Y="0.24" Z="0.24"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
@@ -103,8 +103,8 @@
                     <point Z="25"/>
                     <point Z="17.67" X ="17.67"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
-                <scale X="0.2" Y="0.2" Z="0.2"/>
+                <rotate TIME="5" Y="1"/>
+                <scale X="0.3" Y="0.3" Z="0.3"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
@@ -121,8 +121,8 @@
                     <point X="-30"/>
                     <point Z="21.21" X ="-21.21"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
-                <scale X="0.15" Y="0.15" Z="0.15"/>
+                <rotate TIME="5" Y="1"/>
+                <scale X="0.25" Y="0.25" Z="0.25"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
@@ -139,8 +139,8 @@
                     <point Z="-40"/>
                     <point Z="-28.28" X ="-28.28"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
-                <scale X="0.095" Y="0.095" Z="0.095"/>
+                <rotate TIME="5" Y="1"/>
+                <scale X="0.195" Y="0.195" Z="0.195"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
@@ -157,7 +157,7 @@
                     <point X="50"/>
                     <point Z="-35.35" X ="35.35"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
+                <rotate TIME="5" Y="1"/>
                 <scale X="0.095" Y="0.095" Z="0.095"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
@@ -175,8 +175,8 @@
                     <point Z="60"/>
                     <point Z="42.42" X ="42.42"/>
                 </translate>
-                <rotate TIME="15" Y="1"/>
-                <scale X="0.04" Y="0.04" Z="0.04"/>
+                <rotate TIME="5" Y="1"/>
+                <scale X="0.14" Y="0.14" Z="0.14"/>
                 <models>
                     <model FILE="../assets/sphere.3d"/>
                 </models>
