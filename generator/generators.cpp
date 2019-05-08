@@ -28,7 +28,7 @@
  * @param A - Point.
  * @returns Returns the point with the X, Y and Z axis values scaled by s.
  */
-static inline struct Point operator* (float s, struct Point A)
+struct Point operator* (float s, struct Point A)
 {
     return Point(A.x * s, A.y * s, A.z * s);
 }
@@ -39,7 +39,7 @@ static inline struct Point operator* (float s, struct Point A)
  * @param A - Point.
  * @returns Returns the point with the X, Y and Z axis values scaled by s.
  */
-static inline struct Point operator* (struct Point A, float s)
+struct Point operator* (struct Point A, float s)
 {
     return s * A;
 }
@@ -50,14 +50,19 @@ static inline struct Point operator* (struct Point A, float s)
  * @param B - Second point.
  * @returns Returns the result of adding both input points .
  */
-static inline struct Point operator+ (struct Point A, struct Point B)
+struct Point operator+ (struct Point A, struct Point B)
 {
     return Point(A.x + B.x, A.y + B.y, A.z + B.z);
 }
 
-static inline struct Point operator- (struct Point A, struct Point B)
+struct Point operator- (struct Point A, struct Point B)
 {
     return Point(A.x - B.x, A.y - B.y, A.z - B.z);
+}
+
+struct Point operator/ (struct Point A, float s)
+{
+    return Point(A.x / s, A.y / s, A.z / s);
 }
 
 /**
@@ -87,9 +92,15 @@ static inline float dist (struct Point A, struct Point B)
  * @returns Returns the result of normalizing the input point.
  *
  */
-static inline struct Point normalize (struct Point A)
+struct Point normalize (struct Point A)
 {
-    return 1 / norm(A) * A;
+    return A / norm(A);
+}
+
+struct Point crossProduct(struct Point A, struct Point B)
+{
+	struct Point P = Point((A.y * B.z) - (A.z * B.y),( A.z * B.x) - (A.x * B.z), (A.x * B.y) - (A.y * B.x));
+	return P;
 }
 
 static inline struct Point normal (struct Point p1, struct Point p2)

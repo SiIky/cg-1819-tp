@@ -268,4 +268,12 @@ struct Cylinder Cylinder (float rad, float height, unsigned slices, unsigned sta
  */
 struct Sphere Sphere (float rad, unsigned slices, unsigned stacks);
 
+struct Point crossProduct(struct Point A, struct Point B);
+struct Point normalize (struct Point A);
+struct Point operator* (float s, struct Point A);
+struct Point operator* (struct Point A, float s);
+struct Point operator+ (struct Point A, struct Point B);
+struct Point operator- (struct Point A, struct Point B);
+struct Point operator/ (struct Point A, float s);
+
 #endif /* _GENERATORS_H */

@@ -25,6 +25,17 @@ int usage (const char * cmd)
     return !0;
 }
 
+static float fov = 45;
+static float nearDist = 1;
+static float farDist = 100; //1000
+static float Hnear;
+static float Wnear;
+static float Hfar;
+static float Wfar;
+static float lX = 0, lY = 0, lZ = 0;
+static float uX = 0, uY = 1, uZ = 0;
+static struct frustum frst = {0};
+
 void changeSize (int w, int h)
 {
     // Prevent a divide by zero, when window is too short
@@ -43,7 +54,11 @@ void changeSize (int w, int h)
     glViewport(0, 0, w, h);
 
     // Set perspective
-    gluPerspective(45.0f, ratio, 1.0f, 1000.0f);
+    gluPerspective(fov, ratio, nearDist, farDist);
+    Hnear = 2 * tan(fov / 2) * nearDist;
+    Wnear = Hnear * ratio;
+    Hfar = 2 * tan(fov / 2) * farDist;
+    Wfar = Hfar * ratio;
 
     // return to the model view matrix mode
     glMatrixMode(GL_MODELVIEW);
@@ -57,10 +72,6 @@ float deg2rad (float deg)
 static const struct Point L  = Point(0, 0, 0);
 static const struct Point Up = Point(0, 1, 0);
 
-static float r = 50;
-static float a = 45; /* angle in the XZ plane (horizontal) */
-static float b = 30; /* angle in the XY plane (vertical) */
-
 static int timebase = 0;
 static int frame = 0;
 static struct scene scene;
@@ -68,6 +79,10 @@ static struct scene scene;
 static bool draw_axes   = true;  /* draw axes? */
 static bool draw_curves = true;  /* draw Catmull-Rom curves? */
 static bool draw_lights = false; /* draw static lights every frame? */
+
+int startX, startY, tracking = 0;
+int alpha = 0, beta = 0, r = 5;
+float camX = +0, camY = 30, camZ = 40;
 
 void renderScene (void)
 {
@@ -77,13 +92,45 @@ void renderScene (void)
     // set the camera
     glLoadIdentity();
 
-    float rc = r * cos(deg2rad(b));
+    gluLookAt(camX, camY, camZ, lX, lY, lZ, uX, uY, uZ);
 
-    gluLookAt(
-            rc * sin(deg2rad(a)), r * sin(deg2rad(b)), rc * cos(deg2rad(a)),
-            L.x, L.y, L.z,
-            Up.x, Up.y, Up.z
-            );
+    struct Point p = Point(camX, camY, camZ);
+    struct Point l = Point(lX, lY, lZ);
+    struct Point u = Point(uX, uY, uZ);
+    struct Point d = normalize(l - p);
+    struct Point right = normalize(crossProduct(d, u));
+
+    //far points
+    struct Point fc = p + (d * farDist);
+    struct Point ftl = fc + (u * Hfar / 2) - (right * Wfar / 2);
+    struct Point ftr = fc + (u * Hfar / 2) + (right * Wfar / 2);
+    struct Point fbl = fc - (u * Hfar / 2) - (right * Wfar / 2);
+    struct Point fbr = fc - (u * Hfar / 2) + (right * Wfar / 2);
+
+    //near points
+    struct Point nc = p + (d * nearDist);
+    struct Point ntl = nc + (u * (Hnear / 2)) - (right * (Wnear / 2));
+    struct Point ntr = nc + (u * (Hnear / 2)) + (right * (Wnear / 2));
+    struct Point nbl = nc - (u * (Hnear / 2)) - (right * (Wnear / 2));
+    struct Point nbr = nc - (u * (Hnear / 2)) + (right * (Wnear / 2));
+
+    //farplane
+    frst.far = Plane(fc, normalize(crossProduct(ftr - ftl, ftl - fbl)));
+
+    //near plane
+    frst.near = Plane(nc, normalize(crossProduct(ntl - ntr, ntl - nbl)));
+
+    //top plane
+    frst.top = Plane(ftl, normalize(crossProduct(ntl - ntr, ftr - ntr)));
+
+    //bot plane
+    frst.bot = Plane(nbl, normalize(crossProduct(nbr - nbl, fbl - nbl)));
+
+    //left plane
+    frst.left = Plane(ftl, normalize(crossProduct(ntl - ftl, fbl - ftl)));
+
+    //right plane
+    frst.right = Plane(ftr, normalize(crossProduct(nbr - fbr, ftr - fbr)));
 
     if (draw_axes) {
         glBegin(GL_LINES);
@@ -104,7 +151,7 @@ void renderScene (void)
     unsigned elapsed_program_start = glutGet(GLUT_ELAPSED_TIME);
     unsigned elapsed_last_frame = elapsed_program_start - timebase;
 
-    sc_draw(&scene, elapsed_program_start, draw_curves, draw_lights);
+    sc_draw(&scene, &frst, elapsed_program_start, draw_curves, draw_lights);
 
     // End of frame
     glutSwapBuffers();
@@ -123,24 +170,74 @@ void renderScene (void)
 void processKeys (unsigned char c, int xx, int yy)
 {
     switch (c) {
-        case 'w': b += 1; break;
-        case 'a': a -= 1; break;
-        case 's': b -= 1; break;
-        case 'd': a += 1; break;
-
-        case 'k': r -= 1; break;
-        case 'j': r += 1; break;
-
         case '#': glPolygonMode(GL_FRONT, GL_FILL);  break;
         case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
 
 #define toggle(opt, key) case key: opt = !opt; break
-        toggle(draw_axes,   '%');
-        toggle(draw_curves, '~');
-        toggle(draw_lights, '$');
+                  toggle(draw_axes,   '%');
+                  toggle(draw_curves, '~');
+                  toggle(draw_lights, '$');
 #undef toggle
     }
+}
+
+void processMouseButtons(int button, int state, int xx, int yy)
+{
+    if (state == GLUT_DOWN)
+    {
+        startX = xx;
+        startY = yy;
+        if (button == GLUT_LEFT_BUTTON) { tracking = 1; }
+        else if (button == GLUT_RIGHT_BUTTON) { tracking = 2; }
+        else { tracking = 0; }
+    }
+
+    else if (state == GLUT_UP)
+    {
+        if (tracking == 1)
+        {
+            alpha += (xx - startX);
+            beta += (yy - startY);
+        }
+        else if (tracking == 2)
+        {
+            r -= yy - startY;
+            if (r < 3) { r = 3.0; }
+        }
+        tracking = 0;
+    }
+}
+
+void processMouseMotion(int xx, int yy)
+{
+    int deltaX, deltaY;
+    int alphaAux, betaAux;
+    int rAux;
+
+    if (!tracking) { return; }
+
+    deltaX = xx - startX;
+    deltaY = yy - startY;
+
+    if (tracking == 1)
+    {
+        alphaAux = alpha + deltaX;
+        betaAux = beta + deltaY;
+        if (betaAux > 85.0) { betaAux = 85.0; }
+        else if (betaAux < -85.0) { betaAux = -85.0; }
+        rAux = r;
+    }
+    else if (tracking == 2)
+    {
+        alphaAux = alpha;
+        betaAux = beta;
+        rAux = r - deltaY;
+        if (rAux < 3) { rAux = 3; }
+    }
+    camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
+    camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
+    camY = rAux * sin(betaAux * 3.14 / 180.0);
 }
 
 int main (int argc, char **argv)
@@ -163,6 +260,8 @@ int main (int argc, char **argv)
 
     // Callback registration for keyboard processing
     glutKeyboardFunc(processKeys);
+    glutMouseFunc(processMouseButtons);
+    glutMotionFunc(processMouseMotion);
 
     // OpenGL settings
     glEnable(GL_DEPTH_TEST);
@@ -190,6 +289,10 @@ int main (int argc, char **argv)
 #endif
 
     ilInit();
+
+    camX = r * sin(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);
+    camZ = r * cos(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);
+    camY = r * sin(beta * 3.14 / 180.0);
 
     if (!sc_load_file(argv[1], &scene))
         return !0;

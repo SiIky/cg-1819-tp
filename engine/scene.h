@@ -54,6 +54,7 @@ struct model {
     /* TODO: remove all the strings! */
     std::string fname; /*< Key to this model's IDs */
     unsigned id;       /*< Index to this model's attributes */
+    float mm[4][4];
 };
 
 /**
@@ -127,6 +128,20 @@ struct scene {
     std::map<std::string, struct model_vbo> models;
 };
 
+struct Plane {
+	struct Point p;
+	struct Point n;
+};
+
+struct frustum {
+    struct Plane top;
+    struct Plane bot;
+    struct Plane far;
+    struct Plane near;
+    struct Plane left;
+    struct Plane right;
+};
+
 /**
  * @brief Load a scene file
  * @param path The path to the file
@@ -142,12 +157,14 @@ bool sc_load_file (const char * path, struct scene * scene);
  * @param draw_curves Draw Catmull-Rom curves?
  * @param draw_ligts Draw static lights?
  */
-void sc_draw (struct scene * scene, unsigned elapsed, bool draw_curves, bool draw_ligts);
+void sc_draw (struct scene * scene, struct frustum * frst, unsigned elapsed, bool draw_curves, bool draw_ligts);
 
 /**
  * @brief Draw a scene's static lights
  * @param scene The scene
  */
 void sc_draw_lights (const struct scene * scene);
+
+struct Plane Plane (struct Point p, struct Point n);
 
 #endif /* _SCENE_H */

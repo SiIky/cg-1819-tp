@@ -111,24 +111,9 @@ static void get_global_catmull_rom_point (float gt, struct Point * pos, struct P
     get_catmull_rom_point(t, cp[i[0]], cp[i[1]], cp[i[2]], cp[i[3]], pos, deriv);
 }
 
-static struct Point cross (struct Point a, struct Point b)
-{
-    return Point(
-            a.y*b.z - a.z*b.y,
-            a.z*b.x - a.x*b.z,
-            a.x*b.y - a.y*b.x
-            );
-}
-
 static float norm (struct Point v)
 {
     return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-}
-
-static struct Point normalize (struct Point p)
-{
-    float l = norm(p);
-    return Point(p.x / l, p.y / l, p.z / l);
 }
 
 static void buildRotMatrix (struct Point x, struct Point y, struct Point z, float m[16])
@@ -154,41 +139,44 @@ static void sc_draw_cm_curve (const struct gt * gt)
 
 static void sc_draw_model (struct scene * scene, struct model * model)
 {
-    glPushAttrib(GL_LIGHTING_BIT);
-    struct model_vbo mvbo = scene->models[model->fname];
-    struct attribs atr = mvbo.attribs[model->id];
+    if (true) {
+        glPushAttrib(GL_LIGHTING_BIT);
+        struct model_vbo mvbo = scene->models[model->fname];
+        struct attribs atr = mvbo.attribs[model->id];
 
 #define draw_(T, GL) \
-    if (atr.has_ ## T) do { \
-        GLfloat color[4] = {atr.T.x, atr.T.y, atr.T.z, 1}; \
-        glMaterialfv(GL_FRONT, GL, color);                 \
-    } while (0)
-    draw_(amb,  GL_AMBIENT);
-    draw_(diff, GL_DIFFUSE);
-    draw_(emi,  GL_EMISSION);
-    draw_(spec, GL_SPECULAR);
+        if (atr.has_ ## T) do { \
+            GLfloat color[4] = {atr.T.x, atr.T.y, atr.T.z, 1}; \
+            glMaterialfv(GL_FRONT, GL, color);                 \
+        } while (0)
+        draw_(amb,  GL_AMBIENT);
+        draw_(diff, GL_DIFFUSE);
+        draw_(emi,  GL_EMISSION);
+        draw_(spec, GL_SPECULAR);
 
-    //glMaterialf(GL_FRONT, GL_SHININESS, 128);
+        //glMaterialf(GL_FRONT, GL_SHININESS, 128);
 #undef draw_
 
-    /* bind and draw the triangles */
-    glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
-    glVertexPointer(3, GL_FLOAT, 0, NULL);
 
-    /* bind and draw normals */
-    glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
-    glNormalPointer(GL_FLOAT, 0, 0);
+        /* bind and draw the triangles */
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
+        glVertexPointer(3, GL_FLOAT, 0, NULL);
 
-    if (atr.has_text) {
-        glBindTexture(GL_TEXTURE_2D, atr.text);
-        glBindBuffer(GL_ARRAY_BUFFER, mvbo.t_id);
-        glTexCoordPointer(2, GL_FLOAT, 0, 0);
+        /* bind and draw normals */
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
+        glNormalPointer(GL_FLOAT, 0, 0);
+
+        if (atr.has_text) {
+            /* TODO: emissiva a 0 */
+            glBindTexture(GL_TEXTURE_2D, atr.text);
+            glBindBuffer(GL_ARRAY_BUFFER, mvbo.t_id);
+            glTexCoordPointer(2, GL_FLOAT, 0, 0);
+        }
+
+        glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glPopAttrib();
     }
-
-    glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glPopAttrib();
 }
 
 static void sc_draw_groups (struct scene * scene, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves);
@@ -247,7 +235,7 @@ void sc_draw_lights (const struct scene * scene)
         sc_draw_light(scene, light, i++);
 }
 
-void sc_draw (struct scene * scene, unsigned elapsed, bool draw_curves, bool draw_lights)
+void sc_draw (struct scene * scene, struct frustum * frst, unsigned elapsed, bool draw_curves, bool draw_lights)
 {
     if (draw_lights)
         sc_draw_lights(scene);
@@ -536,4 +524,12 @@ bool sc_load_file (const char * path, struct scene * scene)
     }
 
     return true;
+}
+
+struct Plane Plane (struct Point p, struct Point n)
+{
+	struct Plane ret;
+	ret.p = p;
+	ret.n = n;
+	return ret;
 }

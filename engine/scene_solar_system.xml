@@ -7,7 +7,7 @@
         <group>
             <rotate TIME="20" Y="1"/>
             <models>
-                <model FILE="../assets/sphere.3d" texture="../assets/earth.jpg" emiR="1" emiG="0.63921568627451" emiB="0"/>
+                <model FILE="../assets/sphere.3d" texture="../assets/josecid.jpg" emiR="1" emiG="0.63921568627451" emiB="0"/>
             </models>
         </group>
         <!-- Mercurio -->
