@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "../generator/generators.h"
+#include "camera.h"
 
 int usage (const char * cmd)
 {
@@ -35,8 +36,8 @@ static float Hnear;
 static float Wnear;
 static float Hfar;
 static float Wfar;
-static float lX = 0, lY = 0, lZ = 0;
-static float uX = 0, uY = 1, uZ = 0;
+static struct Point L = Point(0, 0, 0);
+static struct Point U = Point(0, 1, 0);
 static struct frustum frst = {0};
 
 void changeSize2 (int w, int h)
@@ -89,15 +90,8 @@ void changeSize (int w, int h)
 
     // return to the model view matrix mode
     glMatrixMode(GL_MODELVIEW);
+    glutPostRedisplay();
 }
-
-float deg2rad (float deg)
-{
-    return deg * M_PI / 180;
-}
-
-static const struct Point L  = Point(0, 0, 0);
-static const struct Point Up = Point(0, 1, 0);
 
 static int timebase = 0;
 static int frame = 0;
@@ -108,8 +102,7 @@ static bool draw_curves = true;  /* draw Catmull-Rom curves? */
 static bool draw_lights = false; /* draw static lights every frame? */
 
 int startX, startY, tracking = 0;
-int alpha = 0, beta = 0, r = 5;
-float camX = +0, camY = 30, camZ = 40;
+int alpha = 45, beta = 45, r = 10;
 
 void renderScene2 (void)
 {
@@ -146,6 +139,8 @@ void renderScene2 (void)
     glutSwapBuffers();
 }
 
+static struct Point P = Point(0, 0, 0);
+
 void renderScene (void)
 {
     // clear buffers
@@ -154,27 +149,28 @@ void renderScene (void)
     // set the camera
     glLoadIdentity();
 
-    gluLookAt(camX, camY, camZ, lX, lY, lZ, uX, uY, uZ);
+    gluLookAt(
+            P.x, P.y, P.z,
+            L.x, L.y, L.z,
+            U.x, U.y, U.z
+            );
 
-    struct Point p = Point(camX, camY, camZ);
-    struct Point l = Point(lX, lY, lZ);
-    struct Point u = Point(uX, uY, uZ);
-    struct Point d = normalize(l - p);
-    struct Point right = normalize(crossProduct(d, u));
+    struct Point d = normalize(L - P);
+    struct Point right = normalize(crossProduct(d, U));
 
     //far points
-    struct Point fc = p + (d * farDist);
-    struct Point ftl = fc + (u * Hfar / 2) - (right * Wfar / 2);
-    struct Point ftr = fc + (u * Hfar / 2) + (right * Wfar / 2);
-    struct Point fbl = fc - (u * Hfar / 2) - (right * Wfar / 2);
-    struct Point fbr = fc - (u * Hfar / 2) + (right * Wfar / 2);
+    struct Point fc = P + (d * farDist);
+    struct Point ftl = fc + (U * Hfar / 2) - (right * Wfar / 2);
+    struct Point ftr = fc + (U * Hfar / 2) + (right * Wfar / 2);
+    struct Point fbl = fc - (U * Hfar / 2) - (right * Wfar / 2);
+    struct Point fbr = fc - (U * Hfar / 2) + (right * Wfar / 2);
 
     //near points
-    struct Point nc = p + (d * nearDist);
-    struct Point ntl = nc + (u * (Hnear / 2)) - (right * (Wnear / 2));
-    struct Point ntr = nc + (u * (Hnear / 2)) + (right * (Wnear / 2));
-    struct Point nbl = nc - (u * (Hnear / 2)) - (right * (Wnear / 2));
-    struct Point nbr = nc - (u * (Hnear / 2)) + (right * (Wnear / 2));
+    struct Point nc = P + (d * nearDist);
+    struct Point ntl = nc + (U * (Hnear / 2)) - (right * (Wnear / 2));
+    struct Point ntr = nc + (U * (Hnear / 2)) + (right * (Wnear / 2));
+    struct Point nbl = nc - (U * (Hnear / 2)) - (right * (Wnear / 2));
+    struct Point nbr = nc - (U * (Hnear / 2)) + (right * (Wnear / 2));
 
     frst.far   = Plane(fc,  normalize(crossProduct(ftr - ftl, ftl - fbl)));
     frst.near  = Plane(nc,  normalize(crossProduct(ntl - ntr, ntl - nbl)));
@@ -219,19 +215,25 @@ void renderScene (void)
     }
 }
 
+static struct cam cam;
+
 void processKeys (unsigned char c, int xx, int yy)
 {
     switch (c) {
         case '#': glPolygonMode(GL_FRONT, GL_FILL);  break;
         case '-': glPolygonMode(GL_FRONT, GL_LINE);  break;
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
+        case 'c': cam_switch_mode(&cam, &P, &L);
 
 #define toggle(opt, key) case key: opt = !opt; break
                   toggle(draw_axes,   '%');
                   toggle(draw_curves, '~');
                   toggle(draw_lights, '$');
 #undef toggle
+
+        default: cam_process_keys(&cam, c, xx, yy, &P, &L);
     }
+    glutPostRedisplay();
 }
 
 void processMouseButtons(int button, int state, int xx, int yy)
@@ -281,9 +283,9 @@ void processMouseMotion(int xx, int yy)
         if (rAux < 3) { rAux = 3; }
     }
 
-    camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camY = rAux * sin(betaAux * 3.14 / 180.0);
+    P.x = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
+    P.z = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
+    P.y = rAux * sin(betaAux * 3.14 / 180.0);
 }
 
 int main (int argc, char **argv)
@@ -380,14 +382,18 @@ int main (int argc, char **argv)
 #endif /* Secondary Window */
 
 
-    camX = r * sin(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);
-    camZ = r * cos(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);
-    camY = r * sin(beta * 3.14 / 180.0);
+    //P.x = r * sin(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);
+    //P.y = r * sin(beta * 3.14 / 180.0);
+    //P.z = r * cos(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);
 
     if (!sc_load_file(argv[1], &scene))
         return !0;
 
     sc_draw_lights(&scene); /* draw static ligts */
+    //cam_init_fps(&cam, Point(1, 1, 1), Point(-1, -1, -1), &P, &L);
+    cam_init_exp(&cam, r, alpha, beta, &P);
+
+    fprintf(stderr, "%f %f %f\n", cam.atr.exp.r, cam.atr.exp.a, cam.atr.exp.b);
 
     // enter GLUT's main cycle
     glutMainLoop();

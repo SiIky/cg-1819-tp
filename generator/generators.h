@@ -275,5 +275,7 @@ struct Point operator* (struct Point A, float s);
 struct Point operator+ (struct Point A, struct Point B);
 struct Point operator- (struct Point A, struct Point B);
 struct Point operator/ (struct Point A, float s);
+float dist (struct Point A, struct Point B);
+float norm (struct Point v);
 
 #endif /* _GENERATORS_H */

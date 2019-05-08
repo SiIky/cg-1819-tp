@@ -5,7 +5,7 @@ PROJECT(engine)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_executable(${PROJECT_NAME} main.cpp scene.cpp ../generator/generators.cpp pugixml/pugixml.cpp)
+add_executable(${PROJECT_NAME} main.cpp camera.cpp scene.cpp ../generator/generators.cpp pugixml/pugixml.cpp)
 
 find_package(OpenGL REQUIRED)
 include_directories(${OpenGL_INCLUDE_DIRS})

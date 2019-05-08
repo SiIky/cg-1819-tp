@@ -70,7 +70,7 @@ struct Point operator/ (struct Point A, float s)
  * @param v - Given point.
  * @returns Returns the result of the operation.
  */
-static inline float norm (struct Point v)
+inline float norm (struct Point v)
 {
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
@@ -81,7 +81,7 @@ static inline float norm (struct Point v)
  * @param B - Second point.
  * @returns Returns the distance between the two given points.
  */
-static inline float dist (struct Point A, struct Point B)
+inline float dist (struct Point A, struct Point B)
 {
     return norm(B - A);
 }

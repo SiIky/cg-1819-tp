@@ -111,11 +111,6 @@ static void get_global_catmull_rom_point (float gt, struct Point * pos, struct P
     get_catmull_rom_point(t, cp[i[0]], cp[i[1]], cp[i[2]], cp[i[3]], pos, deriv);
 }
 
-static float norm (struct Point v)
-{
-    return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-}
-
 static void buildRotMatrix (struct Point x, struct Point y, struct Point z, float m[16])
 {
     m[0] = x.x; m[1] = x.y; m[2] = x.z; m[3] = 0;
@@ -159,7 +154,7 @@ static void sc_draw_model (struct scene * scene, const struct frustum * frst, st
         || is_out(P, 40, frst->left)
         || is_out(P, 40, frst->right);
 
-    if (shouldnt_draw)
+    if (false && shouldnt_draw)
         return;
 
     glPushAttrib(GL_LIGHTING_BIT);
@@ -173,8 +168,10 @@ static void sc_draw_model (struct scene * scene, const struct frustum * frst, st
     } while (0)
     draw_(amb,  GL_AMBIENT);
     draw_(diff, GL_DIFFUSE);
-    draw_(emi,  GL_EMISSION);
     draw_(spec, GL_SPECULAR);
+
+    if (!atr.has_text)
+        draw_(emi,  GL_EMISSION);
 
     //glMaterialf(GL_FRONT, GL_SHININESS, 128);
 #undef draw_
@@ -189,7 +186,6 @@ static void sc_draw_model (struct scene * scene, const struct frustum * frst, st
     glNormalPointer(GL_FLOAT, 0, 0);
 
     if (atr.has_text) {
-        /* TODO: emissiva a 0 */
         glBindTexture(GL_TEXTURE_2D, atr.text);
         glBindBuffer(GL_ARRAY_BUFFER, mvbo.t_id);
         glTexCoordPointer(2, GL_FLOAT, 0, 0);
