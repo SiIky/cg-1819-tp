@@ -7,7 +7,7 @@ ASSETS := \
     assets/cylinder.3d \
     assets/sphere.3d   \
     assets/teapot.3d   \
-    assets/earth.jpg   \
+    assets/terra.jpg   \
 
 run: $(ENGINE) engine/scene_solar_system.xml $(ASSETS)
 	cd engine/ && ./engine scene_solar_system.xml
@@ -29,7 +29,7 @@ $(GENERATE): generator/Makefile
 generator/Makefile:
 	cd generator/ && cmake CMakeLists.txt
 
-engine/scene_solar_system.xml: assets/sphere.3d assets/teapot.3d assets/earth.jpg
+engine/scene_solar_system.xml: assets/sphere.3d assets/teapot.3d assets/terra.jpg
 
 assets/box.3d: assets/ $(GENERATE)
 	$(GENERATE) box $@ 4 4 4 2

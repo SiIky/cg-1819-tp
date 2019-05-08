@@ -7,7 +7,7 @@
         <group>
             <rotate TIME="20" Y="1"/>
             <models>
-                <model FILE="../assets/sphere.3d" texture="../assets/josecid.jpg" emiR="1" emiG="0.63921568627451" emiB="0"/>
+                <model FILE="../assets/sphere.3d" texture="../assets/sun.jpg" emiR="1" emiG="0.63921568627451" emiB="0"/>
             </models>
         </group>
         <!-- Mercurio -->
@@ -106,7 +106,7 @@
                 <rotate TIME="5" Y="1"/>
                 <scale X="0.6" Y="0.6" Z="0.6"/>
                 <models>
-                    <model FILE="../assets/sphere.3d"/>
+                    <model FILE="../assets/sphere.3d" texture="../assets/jupiter.jpg"/>
                 </models>
             </group>
             <!-- Saturno -->
@@ -122,9 +122,9 @@
                     <point Z="50.91" X ="-50.91"/>
                 </translate>
                 <rotate TIME="5" Y="1"/>
-                <scale X="0.5" Y="0.5" Z="0.5" texture="../assets/saturn.jpg"/>
+                <scale X="0.5" Y="0.5" Z="0.5"/>
                 <models>
-                    <model FILE="../assets/sphere.3d"/>
+                    <model FILE="../assets/sphere.3d"  texture="../assets/saturn.jpg"/>
                 </models>
             </group>
             <!-- Uranos -->
@@ -183,8 +183,7 @@
             </group>
             <!-- Commet -->
             <group>
-		<translate Z="-3">
-		</translate>
+                <translate Z="-3"/>
                 <translate TIME="30">
                     <point X="10"/>
                     <point Z="-11"/>
@@ -195,7 +194,7 @@
                     <point X="-25" Z="14"/>
                     <point Z="11"/>
                 </translate>
-                <scale X="0.2" Y="0.2" Z="0.2"/>
+                <scale X="0.5" Y="0.5" Z="0.5"/>
                 <rotate ANGLE="-90" X="1"/>
                 <rotate TIME="100" X="1" Y="1" Z="1"/>
                 <models>
