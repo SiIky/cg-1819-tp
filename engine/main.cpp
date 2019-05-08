@@ -108,7 +108,7 @@ static bool draw_curves = true;  /* draw Catmull-Rom curves? */
 static bool draw_lights = false; /* draw static lights every frame? */
 
 int startX, startY, tracking = 0;
-int alpha = 0, beta = 0, r = 5;
+int alpha = 45, beta = 45, r = 50;
 float camX = +0, camY = 30, camZ = 40;
 
 void renderScene2 (void)
@@ -123,15 +123,12 @@ void renderScene2 (void)
 
     if (draw_axes) {
         glBegin(GL_LINES);
-        glColor3ub(255, 0, 0);
         glVertex3f(0, 0, 0);
         glVertex3f(500, 0, 0);
 
-        glColor3ub(0, 255, 0);
         glVertex3f(0, 0, 0);
         glVertex3f(0, 500, 0);
 
-        glColor3ub(0, 0, 255);
         glVertex3f(0, 0, 0);
         glVertex3f(0, 0, 500);
         glEnd();
@@ -185,15 +182,12 @@ void renderScene (void)
 
     if (draw_axes) {
         glBegin(GL_LINES);
-        glColor3ub(255, 0, 0);
         glVertex3f(0, 0, 0);
         glVertex3f(500, 0, 0);
 
-        glColor3ub(0, 255, 0);
         glVertex3f(0, 0, 0);
         glVertex3f(0, 500, 0);
 
-        glColor3ub(0, 0, 255);
         glVertex3f(0, 0, 0);
         glVertex3f(0, 0, 500);
         glEnd();
@@ -227,9 +221,9 @@ void processKeys (unsigned char c, int xx, int yy)
         case '.': glPolygonMode(GL_FRONT, GL_POINT); break;
 
 #define toggle(opt, key) case key: opt = !opt; break
-                  toggle(draw_axes,   '%');
-                  toggle(draw_curves, '~');
-                  toggle(draw_lights, '$');
+        toggle(draw_axes,   '%');
+        toggle(draw_curves, '~');
+        toggle(draw_lights, '$');
 #undef toggle
     }
 }
@@ -318,17 +312,7 @@ int main (int argc, char **argv)
         glEnableClientState(GL_NORMAL_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glEnable(GL_TEXTURE_2D);
-
         glEnable(GL_LIGHTING);
-        /* TODO: apagar esta merda */
-        glEnable(GL_LIGHT0);
-        glEnable(GL_LIGHT1);
-        glEnable(GL_LIGHT2);
-        glEnable(GL_LIGHT3);
-        glEnable(GL_LIGHT4);
-        glEnable(GL_LIGHT5);
-        glEnable(GL_LIGHT6);
-        glEnable(GL_LIGHT7);
 
         glClearColor(0, 0, 0, 0);
 
