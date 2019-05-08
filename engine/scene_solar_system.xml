@@ -194,7 +194,7 @@
                     <point X="-25" Z="14"/>
                     <point Z="11"/>
                 </translate>
-                <scale X="0.5" Y="0.5" Z="0.5"/>
+                <scale X="0.2" Y="0.2" Z="0.2"/>
                 <rotate ANGLE="-90" X="1"/>
                 <rotate TIME="100" X="1" Y="1" Z="1"/>
                 <models>
