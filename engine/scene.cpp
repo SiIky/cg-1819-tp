@@ -137,50 +137,71 @@ static void sc_draw_cm_curve (const struct gt * gt)
     glEnd();
 }
 
-static void sc_draw_model (struct scene * scene, struct model * model)
+static inline float distpp(struct Point n, struct Point p, struct Point c)
 {
-    if (true) {
-        glPushAttrib(GL_LIGHTING_BIT);
-        struct model_vbo mvbo = scene->models[model->fname];
-        struct attribs atr = mvbo.attribs[model->id];
+    float d = -(n.x*p.x + n.y*p.y + n.z*p.z);
+    return n.x*c.x + n.y*c.y + n.z*c.z + d;
+}
+
+static inline bool is_out (struct Point c, float r, struct Plane plane)
+{
+    return distpp(plane.n, plane.p, c) + r < 0;
+}
+
+static void sc_draw_model (struct scene * scene, const struct frustum * frst, struct model * model)
+{
+    struct Point P = Point(0, 0, 0);
+    bool shouldnt_draw = false
+        || is_out(P, 40, frst->far)
+        || is_out(P, 40, frst->near)
+        || is_out(P, 40, frst->top)
+        || is_out(P, 40, frst->bot)
+        || is_out(P, 40, frst->left)
+        || is_out(P, 40, frst->right);
+
+    if (shouldnt_draw)
+        return;
+
+    glPushAttrib(GL_LIGHTING_BIT);
+    struct model_vbo mvbo = scene->models[model->fname];
+    struct attribs atr = mvbo.attribs[model->id];
 
 #define draw_(T, GL) \
-        if (atr.has_ ## T) do { \
-            GLfloat color[4] = {atr.T.x, atr.T.y, atr.T.z, 1}; \
-            glMaterialfv(GL_FRONT, GL, color);                 \
-        } while (0)
-        draw_(amb,  GL_AMBIENT);
-        draw_(diff, GL_DIFFUSE);
-        draw_(emi,  GL_EMISSION);
-        draw_(spec, GL_SPECULAR);
+    if (atr.has_ ## T) do { \
+        GLfloat color[4] = {atr.T.x, atr.T.y, atr.T.z, 1}; \
+        glMaterialfv(GL_FRONT, GL, color);                 \
+    } while (0)
+    draw_(amb,  GL_AMBIENT);
+    draw_(diff, GL_DIFFUSE);
+    draw_(emi,  GL_EMISSION);
+    draw_(spec, GL_SPECULAR);
 
-        //glMaterialf(GL_FRONT, GL_SHININESS, 128);
+    //glMaterialf(GL_FRONT, GL_SHININESS, 128);
 #undef draw_
 
 
-        /* bind and draw the triangles */
-        glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
-        glVertexPointer(3, GL_FLOAT, 0, NULL);
+    /* bind and draw the triangles */
+    glBindBuffer(GL_ARRAY_BUFFER, mvbo.v_id);
+    glVertexPointer(3, GL_FLOAT, 0, NULL);
 
-        /* bind and draw normals */
-        glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
-        glNormalPointer(GL_FLOAT, 0, 0);
+    /* bind and draw normals */
+    glBindBuffer(GL_ARRAY_BUFFER, mvbo.n_id);
+    glNormalPointer(GL_FLOAT, 0, 0);
 
-        if (atr.has_text) {
-            /* TODO: emissiva a 0 */
-            glBindTexture(GL_TEXTURE_2D, atr.text);
-            glBindBuffer(GL_ARRAY_BUFFER, mvbo.t_id);
-            glTexCoordPointer(2, GL_FLOAT, 0, 0);
-        }
-
-        glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glPopAttrib();
+    if (atr.has_text) {
+        /* TODO: emissiva a 0 */
+        glBindTexture(GL_TEXTURE_2D, atr.text);
+        glBindBuffer(GL_ARRAY_BUFFER, mvbo.t_id);
+        glTexCoordPointer(2, GL_FLOAT, 0, 0);
     }
+
+    glDrawArrays(GL_TRIANGLES, 0, mvbo.length);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glPopAttrib();
 }
 
-static void sc_draw_groups (struct scene * scene, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves);
-static void sc_draw_group (struct scene * scene, struct group * group, unsigned elapsed, bool draw_curves)
+static void sc_draw_groups (struct scene * scene, const struct frustum * frst, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves);
+static void sc_draw_group (struct scene * scene, const struct frustum * frst, struct group * group, unsigned elapsed, bool draw_curves)
 {
     for (struct gt gt : group->gt) {
         switch (gt.type) {
@@ -197,16 +218,16 @@ static void sc_draw_group (struct scene * scene, struct group * group, unsigned 
     }
 
     for (struct model model : group->models)
-        sc_draw_model(scene, &model);
+        sc_draw_model(scene, frst, &model);
 
-    sc_draw_groups(scene, group->subgroups, elapsed, draw_curves);
+    sc_draw_groups(scene, frst, group->subgroups, elapsed, draw_curves);
 }
 
-static void sc_draw_groups (struct scene * scene, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves)
+static void sc_draw_groups (struct scene * scene, const struct frustum * frst, std::vector<struct group*> groups, unsigned elapsed, bool draw_curves)
 {
     for (struct group * group : groups) {
         glPushMatrix();
-        sc_draw_group(scene, group, elapsed, draw_curves);
+        sc_draw_group(scene, frst, group, elapsed, draw_curves);
         glPopMatrix();
     }
 }
@@ -223,6 +244,7 @@ static void sc_draw_light (const struct scene * scene, struct light * light, uns
     GLfloat cenas[4] = { light->pos.x, light->pos.y, light->pos.z, w, };
     GLfloat colour[4] = { light->color.x, light->color.y, light->color.z, 1, };
     /* Assume `GL_LIGHT[0-7]` were defined sequentially */
+    glEnable(GL_LIGHT0 + i);
     glLightfv(GL_LIGHT0 + i, GL_POSITION, cenas);
     glLightfv(GL_LIGHT0 + i, GL_AMBIENT, colour);
     glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, colour);
@@ -235,11 +257,11 @@ void sc_draw_lights (const struct scene * scene)
         sc_draw_light(scene, light, i++);
 }
 
-void sc_draw (struct scene * scene, struct frustum * frst, unsigned elapsed, bool draw_curves, bool draw_lights)
+void sc_draw (struct scene * scene, const struct frustum * frst, unsigned elapsed, bool draw_curves, bool draw_lights)
 {
     if (draw_lights)
         sc_draw_lights(scene);
-    sc_draw_groups(scene, scene->groups, elapsed, draw_curves);
+    sc_draw_groups(scene, frst, scene->groups, elapsed, draw_curves);
 }
 
 static bool sc_load_texture (struct scene * scene, std::string fname, std::map<std::string, unsigned> * texts, unsigned * ret)

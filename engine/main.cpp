@@ -25,9 +25,12 @@ int usage (const char * cmd)
     return !0;
 }
 
+static int main_window = 0;
+static int secondary_window = 0;
+
 static float fov = 45;
 static float nearDist = 1;
-static float farDist = 100; //1000
+static float farDist = 1000;
 static float Hnear;
 static float Wnear;
 static float Hfar;
@@ -35,6 +38,30 @@ static float Wfar;
 static float lX = 0, lY = 0, lZ = 0;
 static float uX = 0, uY = 1, uZ = 0;
 static struct frustum frst = {0};
+
+void changeSize2 (int w, int h)
+{
+    // Prevent a divide by zero, when window is too short
+    // (you cant make a window with zero width).
+    if(h == 0)
+        h = 1;
+
+    // compute window's aspect ratio
+    float ratio = w * 1.0 / h;
+    // Set the projection matrix as current
+    glMatrixMode(GL_PROJECTION);
+    // Load Identity Matrix
+    glLoadIdentity();
+
+    // Set the viewport to be the entire window
+    glViewport(0, 0, w, h);
+
+    // Set perspective
+    gluPerspective(45, ratio, 10, 100000);
+
+    // return to the model view matrix mode
+    glMatrixMode(GL_MODELVIEW);
+}
 
 void changeSize (int w, int h)
 {
@@ -84,6 +111,41 @@ int startX, startY, tracking = 0;
 int alpha = 0, beta = 0, r = 5;
 float camX = +0, camY = 30, camZ = 40;
 
+void renderScene2 (void)
+{
+    // clear buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // set the camera
+    glLoadIdentity();
+
+    gluLookAt(0, 1000, 0, 0, 0, 0, -1, 0, 0);
+
+    if (draw_axes) {
+        glBegin(GL_LINES);
+        glColor3ub(255, 0, 0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(500, 0, 0);
+
+        glColor3ub(0, 255, 0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 500, 0);
+
+        glColor3ub(0, 0, 255);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 0, 500);
+        glEnd();
+    }
+
+    unsigned elapsed_program_start = glutGet(GLUT_ELAPSED_TIME);
+
+    sc_draw(&scene, &frst, elapsed_program_start, draw_curves, draw_lights);
+
+    // End of frame
+    glutPostRedisplay();
+    glutSwapBuffers();
+}
+
 void renderScene (void)
 {
     // clear buffers
@@ -114,22 +176,11 @@ void renderScene (void)
     struct Point nbl = nc - (u * (Hnear / 2)) - (right * (Wnear / 2));
     struct Point nbr = nc - (u * (Hnear / 2)) + (right * (Wnear / 2));
 
-    //farplane
-    frst.far = Plane(fc, normalize(crossProduct(ftr - ftl, ftl - fbl)));
-
-    //near plane
-    frst.near = Plane(nc, normalize(crossProduct(ntl - ntr, ntl - nbl)));
-
-    //top plane
-    frst.top = Plane(ftl, normalize(crossProduct(ntl - ntr, ftr - ntr)));
-
-    //bot plane
-    frst.bot = Plane(nbl, normalize(crossProduct(nbr - nbl, fbl - nbl)));
-
-    //left plane
-    frst.left = Plane(ftl, normalize(crossProduct(ntl - ftl, fbl - ftl)));
-
-    //right plane
+    frst.far   = Plane(fc,  normalize(crossProduct(ftr - ftl, ftl - fbl)));
+    frst.near  = Plane(nc,  normalize(crossProduct(ntl - ntr, ntl - nbl)));
+    frst.top   = Plane(ftl, normalize(crossProduct(ntl - ntr, ftr - ntr)));
+    frst.bot   = Plane(nbl, normalize(crossProduct(nbr - nbl, fbl - nbl)));
+    frst.left  = Plane(ftl, normalize(crossProduct(ntl - ftl, fbl - ftl)));
     frst.right = Plane(ftr, normalize(crossProduct(nbr - fbr, ftr - fbr)));
 
     if (draw_axes) {
@@ -154,6 +205,7 @@ void renderScene (void)
     sc_draw(&scene, &frst, elapsed_program_start, draw_curves, draw_lights);
 
     // End of frame
+    glutPostRedisplay();
     glutSwapBuffers();
 
     frame++;
@@ -184,26 +236,22 @@ void processKeys (unsigned char c, int xx, int yy)
 
 void processMouseButtons(int button, int state, int xx, int yy)
 {
-    if (state == GLUT_DOWN)
-    {
+    if (state == GLUT_DOWN) {
         startX = xx;
         startY = yy;
-        if (button == GLUT_LEFT_BUTTON) { tracking = 1; }
-        else if (button == GLUT_RIGHT_BUTTON) { tracking = 2; }
-        else { tracking = 0; }
-    }
-
-    else if (state == GLUT_UP)
-    {
-        if (tracking == 1)
-        {
-            alpha += (xx - startX);
-            beta += (yy - startY);
-        }
-        else if (tracking == 2)
-        {
+        tracking = (button == GLUT_LEFT_BUTTON) ?
+            1:
+            (button == GLUT_RIGHT_BUTTON) ?
+            2:
+            0;
+    } else if (state == GLUT_UP) {
+        if (tracking == 1) {
+            alpha += xx - startX;
+            beta += yy - startY;
+        } else if (tracking == 2) {
             r -= yy - startY;
-            if (r < 3) { r = 3.0; }
+            if (r < 3)
+                r = 3.0;
         }
         tracking = 0;
     }
@@ -211,30 +259,28 @@ void processMouseButtons(int button, int state, int xx, int yy)
 
 void processMouseMotion(int xx, int yy)
 {
-    int deltaX, deltaY;
-    int alphaAux, betaAux;
-    int rAux;
+    if (!tracking)
+        return;
 
-    if (!tracking) { return; }
+    int deltaX = xx - startX;
+    int deltaY = yy - startY;
+    int alphaAux = 0;
+    int betaAux = 0;
+    int rAux = 0;
 
-    deltaX = xx - startX;
-    deltaY = yy - startY;
-
-    if (tracking == 1)
-    {
+    if (tracking == 1) {
         alphaAux = alpha + deltaX;
         betaAux = beta + deltaY;
         if (betaAux > 85.0) { betaAux = 85.0; }
         else if (betaAux < -85.0) { betaAux = -85.0; }
         rAux = r;
-    }
-    else if (tracking == 2)
-    {
+    } else if (tracking == 2) {
         alphaAux = alpha;
         betaAux = beta;
         rAux = r - deltaY;
         if (rAux < 3) { rAux = 3; }
     }
+
     camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
     camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
     camY = rAux * sin(betaAux * 3.14 / 180.0);
@@ -248,47 +294,91 @@ int main (int argc, char **argv)
     // init GLUT and the window
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA);
-    glutInitWindowPosition(100,100);
-    glutInitWindowSize(800,800);
-    glutCreateWindow("CG@DI-UM");
-    glPolygonMode(GL_FRONT, GL_FILL);
 
-    // Required callback registry
-    glutDisplayFunc(renderScene);
-    glutIdleFunc(renderScene);
-    glutReshapeFunc(changeSize);
+    { /* main window */
+        glutInitWindowPosition(100,100);
+        glutInitWindowSize(800,800);
+        main_window = glutCreateWindow("Main Window");
 
-    // Callback registration for keyboard processing
-    glutKeyboardFunc(processKeys);
-    glutMouseFunc(processMouseButtons);
-    glutMotionFunc(processMouseMotion);
+        // Required callback registry
+        glutDisplayFunc(renderScene);
+        //glutIdleFunc(renderScene);
+        glutReshapeFunc(changeSize);
 
-    // OpenGL settings
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnable(GL_TEXTURE_2D);
+        // Callback registration for keyboard processing
+        glutKeyboardFunc(processKeys);
+        glutMouseFunc(processMouseButtons);
+        glutMotionFunc(processMouseMotion);
 
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_LIGHT1);
-    glEnable(GL_LIGHT2);
-    glEnable(GL_LIGHT3);
-    glEnable(GL_LIGHT4);
-    glEnable(GL_LIGHT5);
-    glEnable(GL_LIGHT6);
-    glEnable(GL_LIGHT7);
+        // OpenGL settings
+        glPolygonMode(GL_FRONT, GL_FILL);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_NORMAL_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glEnable(GL_TEXTURE_2D);
 
-    glClearColor(0, 0, 0, 0);
+        glEnable(GL_LIGHTING);
+        /* TODO: apagar esta merda */
+        glEnable(GL_LIGHT0);
+        glEnable(GL_LIGHT1);
+        glEnable(GL_LIGHT2);
+        glEnable(GL_LIGHT3);
+        glEnable(GL_LIGHT4);
+        glEnable(GL_LIGHT5);
+        glEnable(GL_LIGHT6);
+        glEnable(GL_LIGHT7);
+
+        glClearColor(0, 0, 0, 0);
 
 #ifndef __APPLE__
-    // init GLEW
-    glewInit();
+        // init GLEW
+        glewInit();
 #endif
 
-    ilInit();
+        ilInit();
+    }
+
+#if 0
+    { /* second window */
+        secondary_window = glutCreateWindow("Secondary Window");
+
+        // Required callback registry
+        glutDisplayFunc(renderScene2);
+        //glutIdleFunc(renderScene2);
+        glutReshapeFunc(changeSize2);
+        // OpenGL settings
+        glPolygonMode(GL_FRONT, GL_FILL);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_NORMAL_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glEnable(GL_TEXTURE_2D);
+
+        glEnable(GL_LIGHTING);
+        /* TODO: apagar esta merda */
+        glEnable(GL_LIGHT0);
+        glEnable(GL_LIGHT1);
+        glEnable(GL_LIGHT2);
+        glEnable(GL_LIGHT3);
+        glEnable(GL_LIGHT4);
+        glEnable(GL_LIGHT5);
+        glEnable(GL_LIGHT6);
+        glEnable(GL_LIGHT7);
+
+        glClearColor(0, 0, 0, 0);
+
+#ifndef __APPLE__
+        // init GLEW
+        glewInit();
+#endif
+
+        ilInit();
+    }
+#endif /* Secondary Window */
+
 
     camX = r * sin(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);
     camZ = r * cos(alpha * 3.14 / 180.0) * cos(beta * 3.14 / 180.0);

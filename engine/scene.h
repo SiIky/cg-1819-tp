@@ -157,7 +157,7 @@ bool sc_load_file (const char * path, struct scene * scene);
  * @param draw_curves Draw Catmull-Rom curves?
  * @param draw_ligts Draw static lights?
  */
-void sc_draw (struct scene * scene, struct frustum * frst, unsigned elapsed, bool draw_curves, bool draw_ligts);
+void sc_draw (struct scene * scene, const struct frustum * frst, unsigned elapsed, bool draw_curves, bool draw_ligts);
 
 /**
  * @brief Draw a scene's static lights
